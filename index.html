@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · thema's · favorieten (lokaal)</title>
+    <title>Woordentrainer · zoeken · favorieten (lokaal)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         * {
@@ -24,7 +24,7 @@
             margin: 0 auto;
         }
 
-        .config-panel {
+        .config-panel, .card, .search-panel {
             background: white;
             border-radius: 28px;
             padding: 16px 18px;
@@ -169,8 +169,7 @@
             cursor: pointer;
         }
 
-        .favorites-btn {
-            background: #b45309;
+        .favorites-btn, .back-btn, .search-btn, .clear-search-btn {
             width: 100%;
             border: none;
             padding: 12px;
@@ -180,17 +179,52 @@
             cursor: pointer;
             margin-top: 12px;
         }
+        .favorites-btn { background: #b45309; }
+        .back-btn { background: #475569; }
+        .search-btn { background: #0f3b2c; margin-top: 8px; }
+        .clear-search-btn { background: #6b7280; margin-top: 8px; }
 
-        .back-btn {
-            background: #475569;
-            width: 100%;
-            border: none;
-            padding: 12px;
+        .search-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
             border-radius: 60px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 12px;
+            font-size: 0.9rem;
+            background: #fefefe;
+        }
+
+        .search-results {
+            margin-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+        }
+        .result-item {
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .result-word {
+            font-weight: 700;
+            color: #0c4e6e;
+            background: #e6f0fa;
+            padding: 6px 12px;
+            border-radius: 40px;
+        }
+        .result-translation {
+            color: #2c3e2f;
+            background: #e9f5ef;
+            padding: 6px 12px;
+            border-radius: 40px;
         }
 
         footer {
@@ -218,6 +252,11 @@
                 right: 8px;
                 font-size: 1.2rem;
             }
+            .result-item {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -228,37 +267,54 @@
         <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
             📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
             ✨ Alleen de <strong>eerste letter</strong> van elk woord is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
-            ⭐ Klik op de ster (rechts) om een woordpaar als favoriet te markeren. Favorieten worden alleen in deze browser opgeslagen.
+            ⭐ Klik op de ster (rechts) om een woordpaar als favoriet te markeren.<br>
+            🔍 Zoek in woorden of vertalingen (resultaten zijn helder).
         </div>
     </div>
 
-    <div class="card" style="padding: 20px 18px; background: white; border-radius: 28px;">
+    <div class="card">
         <div class="theme-header">
             <span class="thema-badge" id="currentThemeName">✨ Laad een thema</span>
             <span class="counter" id="themeCounter">0 / 0</span>
         </div>
 
-        <div id="wordsGrid" class="woorden-grid">
-            <div class="tile">📖 Even geduld</div>
-            <div class="tile">🔄 Data wordt geladen</div>
+        <!-- Normale oefenruimte -->
+        <div id="normalView">
+            <div id="wordsGrid" class="woorden-grid">
+                <div class="tile">📖 Even geduld</div>
+                <div class="tile">🔄 Data wordt geladen</div>
+            </div>
+            <div id="normalControls">
+                <div class="nav-buttons">
+                    <button id="prevBtn" class="nav-btn">◀ Vorig thema</button>
+                    <button id="nextBtn" class="nav-btn">Volgend thema ▶</button>
+                </div>
+            </div>
         </div>
 
-        <div id="normalControls">
-            <div class="nav-buttons">
-                <button id="prevBtn" class="nav-btn">◀ Vorig thema</button>
-                <button id="nextBtn" class="nav-btn">Volgend thema ▶</button>
-            </div>
+        <!-- Zoekresultaten (verborgen in het begin) -->
+        <div id="searchView" style="display: none;">
+            <div class="search-results" id="searchResults"></div>
+            <button id="clearSearchBtn" class="clear-search-btn">✖️ Zoekresultaten wissen</button>
         </div>
 
         <button id="showFavoritesBtn" class="favorites-btn">⭐ Alleen favorieten (0)</button>
         <button id="showAllThemesBtn" class="back-btn" style="display:none;">📚 Terug naar alle thema's</button>
+
+        <!-- Zoekveld -->
+        <div class="search-panel" style="margin-top: 16px;">
+            <div class="search-input-group">
+                <input type="text" id="searchInput" class="search-input" placeholder="Zoeken in woord of vertaling...">
+                <button id="searchBtn" class="search-btn">🔍 Zoek</button>
+            </div>
+        </div>
 
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
             🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
             ⭐ Favorieten blijven bewaard in deze browser (localStorage).
         </p>
     </div>
-    <footer>📖 Woordentrainer · eerste letter duidelijk, rest geblurd · klik om te ontbluren · ⭐ favorieten lokaal</footer>
+    <footer>📖 Woordentrainer · eerste letter duidelijk, rest geblurd · klik om te ontbluren · ⭐ favorieten lokaal · 🔍 zoeken</footer>
 </div>
 
 <script>
@@ -274,10 +330,13 @@
 
     // UI mode: false = normale thema-oefening, true = alleen favorieten tonen
     let favoritesOnlyMode = false;
+    let searchActive = false;
 
     const STORAGE_KEY = 'woordtrainer_favorites_local';
 
     // DOM elementen
+    const normalView = document.getElementById('normalView');
+    const searchView = document.getElementById('searchView');
     const wordsGrid = document.getElementById('wordsGrid');
     const currentThemeNameSpan = document.getElementById('currentThemeName');
     const themeCounterSpan = document.getElementById('themeCounter');
@@ -286,6 +345,10 @@
     const normalControls = document.getElementById('normalControls');
     const showFavoritesBtn = document.getElementById('showFavoritesBtn');
     const showAllThemesBtn = document.getElementById('showAllThemesBtn');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const searchResultsDiv = document.getElementById('searchResults');
     const statusMsgDiv = document.getElementById('statusMessage');
 
     function setStatus(message, isError = false) {
@@ -315,7 +378,7 @@
         });
     }
 
-    // Bouw HTML voor een vertaling: eerste letter duidelijk, rest geblurd, zonder spaties ertussen
+    // Bouw HTML voor een vertaling: eerste letter duidelijk, rest geblurd (alleen voor normale weergave)
     function buildBlurredTranslationHtml(translationText) {
         if (!translationText || translationText.trim() === "") return "???";
         let parts = translationText.split(',').map(part => part.trim());
@@ -356,7 +419,6 @@
                 const rowIndex = parseInt(rowIndexStr);
                 if (isFav) {
                     currentFavorites.set(rowIndex, 1);
-                    // Update metadata en themeMap
                     for (let item of wordsMetadata) {
                         if (item.rowIndex === rowIndex) item.favoriet = 1;
                     }
@@ -379,7 +441,6 @@
     }
 
     function updateLocalFavorite(rowIndex, isFavorite) {
-        // Update metadata
         for (let item of wordsMetadata) {
             if (item.rowIndex === rowIndex) {
                 item.favoriet = isFavorite ? 1 : 0;
@@ -400,15 +461,16 @@
             currentFavorites.delete(rowIndex);
         }
         saveLocalFavorites();
-        // Update de knoptekst (aantal favorieten is gewijzigd)
         updateFavoritesButtonText();
     }
 
     // Favoriet toggle (alleen lokaal)
     async function setFavorite(rowIndex, isFavorite) {
         updateLocalFavorite(rowIndex, isFavorite);
-        // Herteken de huidige weergave (afhankelijk van modus)
-        if (favoritesOnlyMode) {
+        if (searchActive) {
+            // Als de zoekweergave actief is, herteken de zoekresultaten
+            performSearch(searchInput.value.trim());
+        } else if (favoritesOnlyMode) {
             renderFavoritesOnly();
         } else {
             renderCurrentTheme();
@@ -442,7 +504,7 @@
             if (thema === "" || woord === "") continue;
 
             const sheetRowNumber = i + 1; // 1-based (rij 1 = header)
-            const favoriet = 0; // standaard niet favoriet, wordt later uit localStorage geladen
+            const favoriet = 0;
             if (!tempMap.has(thema)) tempMap.set(thema, []);
             tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex: sheetRowNumber });
             tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex: sheetRowNumber });
@@ -454,13 +516,12 @@
         shuffledThemes = shuffleArray([...uniqueThemes]);
         currentIndex = 0;
         currentFavorites.clear();
-        // Laad opgeslagen favorieten uit localStorage en pas metadata aan
         loadLocalFavorites();
         updateFavoritesButtonText();
         return true;
     }
 
-    // Render normale thema-modus
+    // Render normale thema-modus (met blur)
     function renderCurrentTheme() {
         if (!shuffledThemes.length || !themeMap.size) {
             wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Controleer de sheet-URL</div>`;
@@ -495,11 +556,10 @@
             `;
         }
         wordsGrid.innerHTML = gridHtml;
-
         attachEventHandlers();
     }
 
-    // Render alleen favoriete woorden (platte lijst, ongeacht thema)
+    // Render alleen favoriete woorden (platte lijst, met blur? Nee, we gebruiken dezelfde blurred weergave voor consistentie)
     function renderFavoritesOnly() {
         const favoriteItems = wordsMetadata.filter(item => item.favoriet === 1);
         const count = favoriteItems.length;
@@ -514,7 +574,7 @@
         let gridHtml = "";
         for (let item of favoriteItems) {
             const vertalingHtml = buildBlurredTranslationHtml(item.vertaling);
-            const starClass = "favorite-star active"; // altijd actief want het is een favoriet
+            const starClass = "favorite-star active";
             const starSymbol = "★";
             gridHtml += `
                 <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
@@ -528,13 +588,69 @@
         attachEventHandlers();
     }
 
-    // Event handlers voor ontblurren en sterren (gemeenschappelijk)
+    // Zoekfunctionaliteit (geen blur, heldere resultaten)
+    function performSearch(query) {
+        if (!query.trim()) {
+            setStatus("Voer een zoekterm in.", true);
+            return;
+        }
+        const lowerQuery = query.toLowerCase();
+        const results = wordsMetadata.filter(item => 
+            item.woord.toLowerCase().includes(lowerQuery) || 
+            item.vertaling.toLowerCase().includes(lowerQuery)
+        );
+        
+        if (results.length === 0) {
+            searchResultsDiv.innerHTML = `<div class="result-item">Geen resultaten gevonden voor "${escapeHtml(query)}"</div>`;
+        } else {
+            let html = `<div style="margin-bottom: 12px;"><strong>${results.length} resultaten</strong> voor "${escapeHtml(query)}"</div>`;
+            for (let item of results) {
+                html += `
+                    <div class="result-item">
+                        <span class="result-word">${escapeHtml(item.woord)}</span>
+                        <span class="result-translation">${escapeHtml(item.vertaling)}</span>
+                    </div>
+                `;
+            }
+            searchResultsDiv.innerHTML = html;
+        }
+        
+        // Schakel weergave naar zoekresultaten
+        normalView.style.display = "none";
+        searchView.style.display = "block";
+        searchActive = true;
+        favoritesOnlyMode = false;
+        showFavoritesBtn.style.display = "none";
+        showAllThemesBtn.style.display = "block";
+        showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
+        setStatus(`🔍 ${results.length} resultaten gevonden.`, false);
+    }
+
+    function clearSearch() {
+        searchInput.value = "";
+        searchResultsDiv.innerHTML = "";
+        searchView.style.display = "none";
+        normalView.style.display = "block";
+        searchActive = false;
+        // Herstel de vorige modus (normaal of favorieten)
+        if (favoritesOnlyMode) {
+            renderFavoritesOnly();
+            showFavoritesBtn.style.display = "none";
+            showAllThemesBtn.style.display = "block";
+            showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
+        } else {
+            renderCurrentTheme();
+            showFavoritesBtn.style.display = "block";
+            showAllThemesBtn.style.display = "none";
+        }
+        setStatus("Zoekresultaten gewist.", false);
+    }
+
+    // Event handlers voor ontblurren en sterren (gemeenschappelijk voor normale en favorietenmodus)
     function attachEventHandlers() {
-        // Ontblur bij klik op vertaling (niet op ster)
         document.querySelectorAll('.vertaling-tile').forEach(tile => {
             const textSpan = tile.querySelector('.translation-text');
             if (textSpan) {
-                // verwijder oude listener om duplicatie te voorkomen
                 const newTile = tile.cloneNode(true);
                 tile.parentNode.replaceChild(newTile, tile);
                 const newTextSpan = newTile.querySelector('.translation-text');
@@ -546,7 +662,6 @@
                         span.classList.add('clear-suffix');
                     });
                 });
-                // Ster listener opnieuw toevoegen
                 const star = newTile.querySelector('.favorite-star');
                 if (star) {
                     star.addEventListener('click', async function(e) {
@@ -554,7 +669,6 @@
                         const rowIndex = parseInt(this.getAttribute('data-row-index'));
                         const currentlyFavorite = this.classList.contains('active');
                         const newFavorite = !currentlyFavorite;
-                        // Optimistische update UI
                         if (newFavorite) {
                             this.classList.add('active');
                             this.textContent = '★';
@@ -584,9 +698,10 @@
             processSheetData(rows);
             if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden");
             setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Favorieten worden lokaal opgeslagen.`, false);
-            // Start in normale modus
             favoritesOnlyMode = false;
-            normalControls.style.display = "block";
+            searchActive = false;
+            normalView.style.display = "block";
+            searchView.style.display = "none";
             showFavoritesBtn.style.display = "block";
             showAllThemesBtn.style.display = "none";
             renderCurrentTheme();
@@ -611,17 +726,24 @@
 
     // Schakel naar alleen-favorieten modus
     function enableFavoritesOnly() {
+        if (searchActive) clearSearch();
         favoritesOnlyMode = true;
-        normalControls.style.display = "none";
+        normalView.style.display = "block";
+        searchView.style.display = "none";
+        normalControls.style.display = "block";
         showFavoritesBtn.style.display = "none";
         showAllThemesBtn.style.display = "block";
+        showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
         renderFavoritesOnly();
         setStatus("⭐ Toont alleen favoriete woorden. Klik op een ster om te verwijderen.", false);
     }
 
     // Terug naar normale thema-modus
     function disableFavoritesOnly() {
+        if (searchActive) clearSearch();
         favoritesOnlyMode = false;
+        normalView.style.display = "block";
+        searchView.style.display = "none";
         normalControls.style.display = "block";
         showFavoritesBtn.style.display = "block";
         showAllThemesBtn.style.display = "none";
@@ -634,6 +756,9 @@
     nextBtn.addEventListener('click', nextTheme);
     showFavoritesBtn.addEventListener('click', enableFavoritesOnly);
     showAllThemesBtn.addEventListener('click', disableFavoritesOnly);
+    searchBtn.addEventListener('click', () => performSearch(searchInput.value.trim()));
+    clearSearchBtn.addEventListener('click', clearSearch);
+    searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(searchInput.value.trim()); });
 
     // Start
     loadSheetData();
