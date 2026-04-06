@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · zoeken · favorieten (lokaal)</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <title>Woordentrainer · bewerken · verwijderen · favorieten</title>
     <style>
         * {
             box-sizing: border-box;
@@ -103,24 +102,53 @@
         .woord-tile {
             background: #fef9e3;
             border-left: 6px solid #f59e0b;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .vertaling-tile {
             background: #f8fafc;
             border-left: 6px solid #3b82f6;
             cursor: pointer;
-            flex-direction: row;
-            flex-wrap: wrap;
-            gap: 0;
+            flex-direction: column;
+            gap: 8px;
+            padding: 18px 12px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
             justify-content: center;
-            padding: 18px 32px 18px 12px;
+            margin-top: 6px;
+        }
+
+        .action-btn {
+            background: #e2e8f0;
+            border: none;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.1s;
+            color: #1e293b;
+        }
+
+        .action-btn.edit {
+            background: #cbd5e1;
+        }
+        .action-btn.edit:hover {
+            background: #94a3b8;
+        }
+        .action-btn.delete {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .action-btn.delete:hover {
+            background: #fecaca;
         }
 
         .favorite-star {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
             font-size: 1.4rem;
             cursor: pointer;
             color: #9ca3af;
@@ -136,7 +164,7 @@
             text-shadow: 0 0 2px #d97706;
         }
         .favorite-star:active {
-            transform: translateY(-50%) scale(0.9);
+            transform: scale(0.9);
         }
 
         .blur-suffix {
@@ -261,12 +289,8 @@
             .thema-badge {
                 font-size: 1rem;
             }
-            .vertaling-tile {
-                padding: 14px 28px 14px 8px;
-            }
-            .favorite-star {
-                right: 8px;
-                font-size: 1.2rem;
+            .action-buttons {
+                flex-wrap: wrap;
             }
             .result-item {
                 flex-direction: column;
@@ -294,7 +318,9 @@
             📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
             ✨ Alleen de <strong>eerste letter</strong> van elk woord is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
             ⭐ Klik op de ster (rechts) om een woordpaar als favoriet te markeren.<br>
-            🔍 Zoek in woorden of vertalingen (resultaten zijn helder, met thema en rijnummer).
+            🔍 Zoek in woorden of vertalingen.<br>
+            ✏️ Klik op "Wijzig woord/vertaling" om de cel direct aan te passen in de Google Sheet.<br>
+            🗑️ Klik op "Verwijder" om de hele rij uit de sheet te wissen.
         </div>
     </div>
 
@@ -323,15 +349,16 @@
 
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
             🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
-            ⭐ Favorieten blijven bewaard in deze browser (localStorage).
+            ⭐ Favorieten blijven bewaard in deze browser (localStorage).<br>
+            ✏️ Wijzigingen en verwijderingen zijn definitief in de Google Sheet.
         </p>
     </div>
-    <footer>📖 Woordentrainer · eerste letter duidelijk, rest geblurd · klik om te ontbluren · ⭐ favorieten lokaal · 🔍 zoeken</footer>
+    <footer>📖 Woordentrainer · bewerken & verwijderen · ⭐ favorieten lokaal · 🔍 zoeken</footer>
 </div>
 
 <script>
-    // ==================== VASTE SHEET URL ====================
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv";
+    // ==================== WEB APP URL (Google Apps Script) ====================
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzEpuTrlf-fkUroyEGfsE0takpRG645pkTI2KR6BIKA47u6uzl-BzQC-QsJ23BxkvPU/exec";
 
     let themeMap = new Map();        // thema -> array van {woord, vertaling, rowIndex}
     let wordsMetadata = [];          // alle items met rowIndex, thema, woord, vertaling
@@ -343,6 +370,7 @@
     // UI mode
     let favoritesOnlyMode = false;
     let searchActive = false;
+    let lastSearchQuery = "";
 
     const STORAGE_KEY = 'woordtrainer_favorites_local';
 
@@ -389,7 +417,7 @@
         });
     }
 
-    // Bouw HTML voor een vertaling: eerste letter duidelijk, rest geblurd (alleen voor normale weergave)
+    // Bouw HTML voor een vertaling: eerste letter duidelijk, rest geblurd
     function buildBlurredTranslationHtml(translationText) {
         if (!translationText || translationText.trim() === "") return "???";
         let parts = translationText.split(',').map(part => part.trim());
@@ -429,14 +457,6 @@
                 const rowIndex = parseInt(rowIndexStr);
                 if (isFav) {
                     currentFavorites.set(rowIndex, 1);
-                    for (let item of wordsMetadata) {
-                        if (item.rowIndex === rowIndex) item.favoriet = 1;
-                    }
-                    for (let [thema, words] of themeMap.entries()) {
-                        for (let w of words) {
-                            if (w.rowIndex === rowIndex) w.favoriet = 1;
-                        }
-                    }
                 }
             }
         } catch(e) { console.warn(e); }
@@ -448,6 +468,29 @@
             obj[k] = v;
         }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    }
+
+    // Sincroniseer favorieten met de huidige metadata (na data laden)
+    function syncFavoritesWithMetadata() {
+        // Haal alle bestaande rowIndexes uit metadata
+        const existingRowIndexes = new Set(wordsMetadata.map(item => item.rowIndex));
+        // Verwijder favorieten waarvan de rij niet meer bestaat (bv na verwijdering)
+        for (let favRow of currentFavorites.keys()) {
+            if (!existingRowIndexes.has(favRow)) {
+                currentFavorites.delete(favRow);
+            }
+        }
+        // Zet favoriet=1 in metadata voor rijen die in currentFavorites zitten
+        for (let item of wordsMetadata) {
+            if (currentFavorites.has(item.rowIndex)) {
+                item.favoriet = 1;
+            } else {
+                item.favoriet = 0;
+            }
+        }
+        // Sla de opgeschoonde lijst op
+        saveLocalFavorites();
+        updateFavoritesButtonText();
     }
 
     function updateLocalFavorite(rowIndex, isFavorite) {
@@ -477,7 +520,7 @@
     async function setFavorite(rowIndex, isFavorite) {
         updateLocalFavorite(rowIndex, isFavorite);
         if (searchActive) {
-            performSearch(searchInput.value.trim());
+            performSearch(lastSearchQuery);
         } else if (favoritesOnlyMode) {
             renderFavoritesOnly();
         } else {
@@ -486,36 +529,101 @@
         setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'} (lokaal)`, false);
     }
 
-    // Verwerk CSV naar thema's
-    function processSheetData(csvRows) {
-        let startIdx = 0;
-        if (csvRows.length > 0) {
-            const firstRow = csvRows[0];
-            const possibleHeader = firstRow[0]?.toString().toLowerCase() || "";
-            if (possibleHeader.includes("hoofdthema") || possibleHeader === "hoofdthema" || firstRow[1]?.toString().toLowerCase().includes("thema")) {
-                startIdx = 1;
+    // ==================== COMMUNICATIE MET GOOGLE APPS SCRIPT ====================
+    async function updateCell(rowIndex, column, newValue) {
+        try {
+            const response = await fetch(WEBAPP_URL, {
+                method: "POST",
+                mode: "cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "update",
+                    row: rowIndex,
+                    col: column,
+                    value: newValue
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                setStatus(`✅ Cel bijgewerkt (rij ${rowIndex})`, false);
+                await loadSheetData(); // herlaad alles
+                return true;
+            } else {
+                setStatus(`❌ Fout bij bijwerken: ${result.message}`, true);
+                return false;
             }
+        } catch (err) {
+            setStatus(`❌ Netwerkfout: ${err.message}`, true);
+            return false;
         }
-        const themaColIdx = 1;
-        const woordColIdx = 2;
-        const vertalingColIdx = 3;
+    }
 
+    async function deleteRow(rowIndex) {
+        if (!confirm(`Weet je zeker dat je rij ${rowIndex} permanent wilt verwijderen uit de Google Sheet?`)) return false;
+        try {
+            const response = await fetch(WEBAPP_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "delete",
+                    row: rowIndex
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                setStatus(`✅ Rij ${rowIndex} verwijderd`, false);
+                await loadSheetData();
+                return true;
+            } else {
+                setStatus(`❌ Fout bij verwijderen: ${result.message}`, true);
+                return false;
+            }
+        } catch (err) {
+            setStatus(`❌ Netwerkfout: ${err.message}`, true);
+            return false;
+        }
+    }
+
+    // Data laden uit de web app (JSON)
+    async function loadSheetData() {
+        setStatus("🔄 Bezig met laden van Google Sheet via web app...", false);
+        try {
+            const response = await fetch(WEBAPP_URL);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (!data || !Array.isArray(data) || data.length === 0) throw new Error("Geen data ontvangen");
+            processSheetDataFromJson(data);
+            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Favorieten gesynchroniseerd.`, false);
+            
+            // Herstel weergave op basis van huidige modus
+            if (searchActive) {
+                performSearch(lastSearchQuery);
+            } else if (favoritesOnlyMode) {
+                renderFavoritesOnly();
+            } else {
+                renderCurrentTheme();
+            }
+        } catch (err) {
+            setStatus(`Fout bij laden: ${err.message}. Controleer de web app URL.`, true);
+            wordsGrid.innerHTML = `<div class="tile">❌ Fout</div><div class="tile">Kon sheet niet laden</div>`;
+        }
+    }
+
+    // Verwerk de JSON van de web app (array van objecten met kolomnamen als keys)
+    function processSheetDataFromJson(rows) {
+        // Verwacht: elk object heeft properties zoals "hoofdthema", "thema", "woord", "vertaling", "woordtype", "rowIndex"
         const tempMap = new Map();
         const tempMetadata = [];
-
-        for (let i = startIdx; i < csvRows.length; i++) {
-            const row = csvRows[i];
-            if (!row || row.length < 4) continue;
-            const thema = row[themaColIdx] ? row[themaColIdx].toString().trim() : "";
-            const woord = row[woordColIdx] ? row[woordColIdx].toString().trim() : "";
-            const vertaling = row[vertalingColIdx] ? row[vertalingColIdx].toString().trim() : "";
+        for (const row of rows) {
+            const thema = (row.thema || "").toString().trim();
+            const woord = (row.woord || "").toString().trim();
+            const vertaling = (row.vertaling || "").toString().trim();
             if (thema === "" || woord === "") continue;
-
-            const sheetRowNumber = i + 1; // 1-based
-            const favoriet = 0;
+            const rowIndex = row.rowIndex; // 1-based
+            const favoriet = 0; // wordt later door sync gezet
             if (!tempMap.has(thema)) tempMap.set(thema, []);
-            tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex: sheetRowNumber });
-            tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex: sheetRowNumber });
+            tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex });
+            tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex });
         }
         if (tempMap.size === 0) throw new Error("Geen geldige thema's gevonden.");
         themeMap = tempMap;
@@ -523,13 +631,12 @@
         uniqueThemes = Array.from(themeMap.keys());
         shuffledThemes = shuffleArray([...uniqueThemes]);
         currentIndex = 0;
-        currentFavorites.clear();
-        loadLocalFavorites();
-        updateFavoritesButtonText();
-        return true;
+        
+        // Synchroniseer favorieten (verwijder ongeldige, zet juiste vlaggen)
+        syncFavoritesWithMetadata();
     }
 
-    // Render normale thema-modus (met blur)
+    // ==================== RENDER FUNCTIES (met bewerk/verwijder knoppen) ====================
     function renderCurrentTheme() {
         if (!shuffledThemes.length || !themeMap.size) {
             wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Controleer de sheet-URL</div>`;
@@ -556,10 +663,19 @@
             const starClass = isFav ? "favorite-star active" : "favorite-star";
             const starSymbol = isFav ? "★" : "☆";
             gridHtml += `
-                <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
+                <div class="tile woord-tile">
+                    ${escapeHtml(item.woord)}
+                    <div class="action-buttons">
+                        <button class="action-btn edit" data-action="edit-word" data-row="${item.rowIndex}" data-col="3">✏️ Wijzig woord</button>
+                        <button class="action-btn delete" data-action="delete" data-row="${item.rowIndex}">🗑️ Verwijder</button>
+                    </div>
+                </div>
                 <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
                     <span class="translation-text">${vertalingHtml}</span>
-                    <button class="${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
+                    <div class="action-buttons">
+                        <button class="action-btn edit" data-action="edit-trans" data-row="${item.rowIndex}" data-col="4">✏️ Wijzig vertaling</button>
+                        <button class="favorite-star ${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
+                    </div>
                 </div>
             `;
         }
@@ -567,7 +683,6 @@
         attachEventHandlers();
     }
 
-    // Render alleen favoriete woorden
     function renderFavoritesOnly() {
         const favoriteItems = wordsMetadata.filter(item => item.favoriet === 1);
         const count = favoriteItems.length;
@@ -585,10 +700,19 @@
             const starClass = "favorite-star active";
             const starSymbol = "★";
             gridHtml += `
-                <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
+                <div class="tile woord-tile">
+                    ${escapeHtml(item.woord)}
+                    <div class="action-buttons">
+                        <button class="action-btn edit" data-action="edit-word" data-row="${item.rowIndex}" data-col="3">✏️ Wijzig woord</button>
+                        <button class="action-btn delete" data-action="delete" data-row="${item.rowIndex}">🗑️ Verwijder</button>
+                    </div>
+                </div>
                 <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
                     <span class="translation-text">${vertalingHtml}</span>
-                    <button class="${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
+                    <div class="action-buttons">
+                        <button class="action-btn edit" data-action="edit-trans" data-row="${item.rowIndex}" data-col="4">✏️ Wijzig vertaling</button>
+                        <button class="favorite-star ${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
+                    </div>
                 </div>
             `;
         }
@@ -596,12 +720,13 @@
         attachEventHandlers();
     }
 
-    // Zoekfunctionaliteit (geen blur, heldere resultaten met thema en rijnummer)
+    // ==================== ZOEKFUNCTIE ====================
     function performSearch(query) {
         if (!query.trim()) {
             setStatus("Voer een zoekterm in.", true);
             return;
         }
+        lastSearchQuery = query;
         const lowerQuery = query.toLowerCase();
         const results = wordsMetadata.filter(item => 
             item.woord.toLowerCase().includes(lowerQuery) || 
@@ -626,7 +751,6 @@
             searchResultsDiv.innerHTML = html;
         }
         
-        // Schakel weergave naar zoekresultaten
         normalView.style.display = "none";
         clearSearchBtn.style.display = "block";
         searchActive = true;
@@ -644,6 +768,7 @@
         clearSearchBtn.style.display = "none";
         normalView.style.display = "block";
         searchActive = false;
+        lastSearchQuery = "";
         if (favoritesOnlyMode) {
             renderFavoritesOnly();
             showFavoritesBtn.style.display = "none";
@@ -657,73 +782,91 @@
         setStatus("Zoekresultaten gewist.", false);
     }
 
-    // Event handlers voor ontblurren en sterren
+    // ==================== EVENT HANDLERS (blur, sterren, bewerken, verwijderen) ====================
     function attachEventHandlers() {
+        // Ontblur functionaliteit: klik op vertaling-tile (maar niet op knoppen)
         document.querySelectorAll('.vertaling-tile').forEach(tile => {
-            const textSpan = tile.querySelector('.translation-text');
+            // Clone om dubbele listeners te voorkomen (simpele aanpak)
+            const newTile = tile.cloneNode(true);
+            tile.parentNode.replaceChild(newTile, tile);
+            
+            const textSpan = newTile.querySelector('.translation-text');
             if (textSpan) {
-                const newTile = tile.cloneNode(true);
-                tile.parentNode.replaceChild(newTile, tile);
-                const newTextSpan = newTile.querySelector('.translation-text');
                 newTile.addEventListener('click', function(e) {
-                    if (e.target.classList && e.target.classList.contains('favorite-star')) return;
+                    // Als er op een knop wordt geklikt, niet ontbluren
+                    if (e.target.tagName === 'BUTTON') return;
                     e.stopPropagation();
-                    newTextSpan.querySelectorAll('.blur-suffix').forEach(span => {
+                    textSpan.querySelectorAll('.blur-suffix').forEach(span => {
                         span.classList.remove('blur-suffix');
                         span.classList.add('clear-suffix');
                     });
                 });
-                const star = newTile.querySelector('.favorite-star');
-                if (star) {
-                    star.addEventListener('click', async function(e) {
-                        e.stopPropagation();
-                        const rowIndex = parseInt(this.getAttribute('data-row-index'));
-                        const currentlyFavorite = this.classList.contains('active');
-                        const newFavorite = !currentlyFavorite;
-                        if (newFavorite) {
-                            this.classList.add('active');
-                            this.textContent = '★';
-                        } else {
-                            this.classList.remove('active');
-                            this.textContent = '☆';
-                        }
-                        await setFavorite(rowIndex, newFavorite);
-                    });
-                }
+            }
+            
+            // Sterren functionaliteit
+            const star = newTile.querySelector('.favorite-star');
+            if (star) {
+                star.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    const rowIndex = parseInt(this.getAttribute('data-row-index'));
+                    const currentlyFavorite = this.classList.contains('active');
+                    const newFavorite = !currentlyFavorite;
+                    if (newFavorite) {
+                        this.classList.add('active');
+                        this.textContent = '★';
+                    } else {
+                        this.classList.remove('active');
+                        this.textContent = '☆';
+                    }
+                    await setFavorite(rowIndex, newFavorite);
+                });
+            }
+            
+            // Bewerk- en verwijderknoppen in de vertaling-tile
+            const editTransBtn = newTile.querySelector('[data-action="edit-trans"]');
+            if (editTransBtn) {
+                editTransBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const row = parseInt(editTransBtn.dataset.row);
+                    const col = parseInt(editTransBtn.dataset.col);
+                    const newValue = prompt("Nieuwe vertaling:", "");
+                    if (newValue !== null && newValue.trim() !== "") {
+                        await updateCell(row, col, newValue.trim());
+                    }
+                });
+            }
+        });
+        
+        // Knoppen in de woord-tile
+        document.querySelectorAll('.woord-tile').forEach(tile => {
+            const newTile = tile.cloneNode(true);
+            tile.parentNode.replaceChild(newTile, tile);
+            
+            const editWordBtn = newTile.querySelector('[data-action="edit-word"]');
+            if (editWordBtn) {
+                editWordBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const row = parseInt(editWordBtn.dataset.row);
+                    const col = parseInt(editWordBtn.dataset.col);
+                    const newValue = prompt("Nieuw woord:", "");
+                    if (newValue !== null && newValue.trim() !== "") {
+                        await updateCell(row, col, newValue.trim());
+                    }
+                });
+            }
+            
+            const deleteBtn = newTile.querySelector('[data-action="delete"]');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const row = parseInt(deleteBtn.dataset.row);
+                    await deleteRow(row);
+                });
             }
         });
     }
 
-    // Data laden uit Google Sheets CSV
-    async function loadSheetData() {
-        setStatus("🔄 Bezig met laden van Google Sheet...", false);
-        try {
-            const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const csvText = await response.text();
-            if (!csvText.trim()) throw new Error("Leeg CSV-bestand");
-            const parsed = Papa.parse(csvText, { skipEmptyLines: true });
-            if (parsed.errors.length) console.warn(parsed.errors);
-            const rows = parsed.data;
-            if (!rows || rows.length < 2) throw new Error("CSV heeft te weinig rijen");
-            processSheetData(rows);
-            if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden");
-            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Favorieten worden lokaal opgeslagen.`, false);
-            favoritesOnlyMode = false;
-            searchActive = false;
-            normalView.style.display = "block";
-            searchResultsDiv.style.display = "none";
-            clearSearchBtn.style.display = "none";
-            showFavoritesBtn.style.display = "block";
-            showAllThemesBtn.style.display = "none";
-            renderCurrentTheme();
-        } catch (err) {
-            setStatus(`Fout bij laden: ${err.message}. Controleer de sheet-URL.`, true);
-            wordsGrid.innerHTML = `<div class="tile">❌ Fout</div><div class="tile">Kon sheet niet laden</div>`;
-        }
-    }
-
-    // Navigatie functies
+    // ==================== NAVIGATIE & MODI ====================
     function prevTheme() {
         if (!shuffledThemes.length) return;
         currentIndex = (currentIndex - 1 + shuffledThemes.length) % shuffledThemes.length;
@@ -757,7 +900,7 @@
         setStatus("📚 Terug naar thema-oefening.", false);
     }
 
-    // Event listeners
+    // ==================== INITIALISATIE ====================
     prevBtn.addEventListener('click', prevTheme);
     nextBtn.addEventListener('click', nextTheme);
     showFavoritesBtn.addEventListener('click', enableFavoritesOnly);
