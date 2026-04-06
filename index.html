@@ -209,9 +209,10 @@
             padding: 12px;
             margin-bottom: 10px;
             display: flex;
-            justify-content: space-between;
-            gap: 12px;
             flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
         }
         .result-word {
             font-weight: 700;
@@ -225,6 +226,21 @@
             background: #e9f5ef;
             padding: 6px 12px;
             border-radius: 40px;
+        }
+        .result-theme {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+        }
+        .result-row {
+            background: #e2e8f0;
+            color: #1e293b;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-family: monospace;
         }
 
         footer {
@@ -254,7 +270,7 @@
             }
             .result-item {
                 flex-direction: column;
-                align-items: center;
+                align-items: stretch;
                 text-align: center;
             }
         }
@@ -262,13 +278,23 @@
 </head>
 <body>
 <div class="container">
+    <!-- Zoekveld bovenaan -->
+    <div class="search-panel">
+        <div class="search-input-group">
+            <input type="text" id="searchInput" class="search-input" placeholder="Zoeken in woord of vertaling...">
+            <button id="searchBtn" class="search-btn">🔍 Zoek</button>
+        </div>
+        <div id="searchResults" class="search-results" style="display: none;"></div>
+        <button id="clearSearchBtn" class="clear-search-btn" style="display: none;">✖️ Zoekresultaten wissen</button>
+    </div>
+
     <div class="config-panel">
         <div id="statusMessage" class="status-msg">🔄 Woorden worden geladen...</div>
         <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
             📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
             ✨ Alleen de <strong>eerste letter</strong> van elk woord is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
             ⭐ Klik op de ster (rechts) om een woordpaar als favoriet te markeren.<br>
-            🔍 Zoek in woorden of vertalingen (resultaten zijn helder).
+            🔍 Zoek in woorden of vertalingen (resultaten zijn helder, met thema en rijnummer).
         </div>
     </div>
 
@@ -292,22 +318,8 @@
             </div>
         </div>
 
-        <!-- Zoekresultaten (verborgen in het begin) -->
-        <div id="searchView" style="display: none;">
-            <div class="search-results" id="searchResults"></div>
-            <button id="clearSearchBtn" class="clear-search-btn">✖️ Zoekresultaten wissen</button>
-        </div>
-
         <button id="showFavoritesBtn" class="favorites-btn">⭐ Alleen favorieten (0)</button>
         <button id="showAllThemesBtn" class="back-btn" style="display:none;">📚 Terug naar alle thema's</button>
-
-        <!-- Zoekveld -->
-        <div class="search-panel" style="margin-top: 16px;">
-            <div class="search-input-group">
-                <input type="text" id="searchInput" class="search-input" placeholder="Zoeken in woord of vertaling...">
-                <button id="searchBtn" class="search-btn">🔍 Zoek</button>
-            </div>
-        </div>
 
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
             🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
@@ -328,7 +340,7 @@
     let currentIndex = 0;
     let currentFavorites = new Map(); // key = rowIndex, value = 1
 
-    // UI mode: false = normale thema-oefening, true = alleen favorieten tonen
+    // UI mode
     let favoritesOnlyMode = false;
     let searchActive = false;
 
@@ -336,7 +348,6 @@
 
     // DOM elementen
     const normalView = document.getElementById('normalView');
-    const searchView = document.getElementById('searchView');
     const wordsGrid = document.getElementById('wordsGrid');
     const currentThemeNameSpan = document.getElementById('currentThemeName');
     const themeCounterSpan = document.getElementById('themeCounter');
@@ -403,13 +414,12 @@
         return wordsMetadata.filter(item => item.favoriet === 1).length;
     }
 
-    // Werk de tekst van de favorietenknop bij met het aantal
     function updateFavoritesButtonText() {
         const count = getFavoritesCount();
         showFavoritesBtn.textContent = `⭐ Alleen favorieten (${count})`;
     }
 
-    // Lokale favorieten laden/bewaren
+    // Lokale favorieten
     function loadLocalFavorites() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return;
@@ -464,11 +474,9 @@
         updateFavoritesButtonText();
     }
 
-    // Favoriet toggle (alleen lokaal)
     async function setFavorite(rowIndex, isFavorite) {
         updateLocalFavorite(rowIndex, isFavorite);
         if (searchActive) {
-            // Als de zoekweergave actief is, herteken de zoekresultaten
             performSearch(searchInput.value.trim());
         } else if (favoritesOnlyMode) {
             renderFavoritesOnly();
@@ -503,7 +511,7 @@
             const vertaling = row[vertalingColIdx] ? row[vertalingColIdx].toString().trim() : "";
             if (thema === "" || woord === "") continue;
 
-            const sheetRowNumber = i + 1; // 1-based (rij 1 = header)
+            const sheetRowNumber = i + 1; // 1-based
             const favoriet = 0;
             if (!tempMap.has(thema)) tempMap.set(thema, []);
             tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex: sheetRowNumber });
@@ -559,7 +567,7 @@
         attachEventHandlers();
     }
 
-    // Render alleen favoriete woorden (platte lijst, met blur? Nee, we gebruiken dezelfde blurred weergave voor consistentie)
+    // Render alleen favoriete woorden
     function renderFavoritesOnly() {
         const favoriteItems = wordsMetadata.filter(item => item.favoriet === 1);
         const count = favoriteItems.length;
@@ -588,7 +596,7 @@
         attachEventHandlers();
     }
 
-    // Zoekfunctionaliteit (geen blur, heldere resultaten)
+    // Zoekfunctionaliteit (geen blur, heldere resultaten met thema en rijnummer)
     function performSearch(query) {
         if (!query.trim()) {
             setStatus("Voer een zoekterm in.", true);
@@ -600,6 +608,7 @@
             item.vertaling.toLowerCase().includes(lowerQuery)
         );
         
+        searchResultsDiv.style.display = "block";
         if (results.length === 0) {
             searchResultsDiv.innerHTML = `<div class="result-item">Geen resultaten gevonden voor "${escapeHtml(query)}"</div>`;
         } else {
@@ -609,6 +618,8 @@
                     <div class="result-item">
                         <span class="result-word">${escapeHtml(item.woord)}</span>
                         <span class="result-translation">${escapeHtml(item.vertaling)}</span>
+                        <span class="result-theme">📁 ${escapeHtml(item.thema)}</span>
+                        <span class="result-row">#${item.rowIndex}</span>
                     </div>
                 `;
             }
@@ -617,7 +628,7 @@
         
         // Schakel weergave naar zoekresultaten
         normalView.style.display = "none";
-        searchView.style.display = "block";
+        clearSearchBtn.style.display = "block";
         searchActive = true;
         favoritesOnlyMode = false;
         showFavoritesBtn.style.display = "none";
@@ -629,10 +640,10 @@
     function clearSearch() {
         searchInput.value = "";
         searchResultsDiv.innerHTML = "";
-        searchView.style.display = "none";
+        searchResultsDiv.style.display = "none";
+        clearSearchBtn.style.display = "none";
         normalView.style.display = "block";
         searchActive = false;
-        // Herstel de vorige modus (normaal of favorieten)
         if (favoritesOnlyMode) {
             renderFavoritesOnly();
             showFavoritesBtn.style.display = "none";
@@ -646,7 +657,7 @@
         setStatus("Zoekresultaten gewist.", false);
     }
 
-    // Event handlers voor ontblurren en sterren (gemeenschappelijk voor normale en favorietenmodus)
+    // Event handlers voor ontblurren en sterren
     function attachEventHandlers() {
         document.querySelectorAll('.vertaling-tile').forEach(tile => {
             const textSpan = tile.querySelector('.translation-text');
@@ -701,7 +712,8 @@
             favoritesOnlyMode = false;
             searchActive = false;
             normalView.style.display = "block";
-            searchView.style.display = "none";
+            searchResultsDiv.style.display = "none";
+            clearSearchBtn.style.display = "none";
             showFavoritesBtn.style.display = "block";
             showAllThemesBtn.style.display = "none";
             renderCurrentTheme();
@@ -711,7 +723,7 @@
         }
     }
 
-    // Navigatie functies voor normale modus
+    // Navigatie functies
     function prevTheme() {
         if (!shuffledThemes.length) return;
         currentIndex = (currentIndex - 1 + shuffledThemes.length) % shuffledThemes.length;
@@ -724,13 +736,10 @@
         renderCurrentTheme();
     }
 
-    // Schakel naar alleen-favorieten modus
     function enableFavoritesOnly() {
         if (searchActive) clearSearch();
         favoritesOnlyMode = true;
         normalView.style.display = "block";
-        searchView.style.display = "none";
-        normalControls.style.display = "block";
         showFavoritesBtn.style.display = "none";
         showAllThemesBtn.style.display = "block";
         showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
@@ -738,13 +747,10 @@
         setStatus("⭐ Toont alleen favoriete woorden. Klik op een ster om te verwijderen.", false);
     }
 
-    // Terug naar normale thema-modus
     function disableFavoritesOnly() {
         if (searchActive) clearSearch();
         favoritesOnlyMode = false;
         normalView.style.display = "block";
-        searchView.style.display = "none";
-        normalControls.style.display = "block";
         showFavoritesBtn.style.display = "block";
         showAllThemesBtn.style.display = "none";
         renderCurrentTheme();
