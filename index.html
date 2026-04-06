@@ -169,9 +169,8 @@
             cursor: pointer;
         }
 
-        .shuffle-btn {
-            background: #2c3e2f;
-            margin-top: 12px;
+        .favorites-btn {
+            background: #b45309;
             width: 100%;
             border: none;
             padding: 12px;
@@ -179,14 +178,19 @@
             color: white;
             font-weight: 600;
             cursor: pointer;
-        }
-
-        .favorites-btn {
-            background: #b45309;
+            margin-top: 12px;
         }
 
         .back-btn {
             background: #475569;
+            width: 100%;
+            border: none;
+            padding: 12px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
         }
 
         footer {
@@ -194,15 +198,6 @@
             text-align: center;
             margin-top: 28px;
             color: #62748c;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-        }
-        .button-group button {
-            flex: 1;
         }
 
         @media (max-width: 480px) {
@@ -253,14 +248,10 @@
                 <button id="prevBtn" class="nav-btn">◀ Vorig thema</button>
                 <button id="nextBtn" class="nav-btn">Volgend thema ▶</button>
             </div>
-            <button id="randomThemeBtn" class="shuffle-btn">🎲 Willekeurig ander thema</button>
-            <button id="reshuffleThemesBtn" class="shuffle-btn" style="background:#475569;">🔄 Nieuwe thema-volgorde</button>
         </div>
 
-        <div class="button-group">
-            <button id="showFavoritesBtn" class="shuffle-btn favorites-btn">⭐ Alleen favorieten</button>
-            <button id="showAllThemesBtn" class="shuffle-btn back-btn" style="display:none;">📚 Terug naar alle thema's</button>
-        </div>
+        <button id="showFavoritesBtn" class="favorites-btn">⭐ Alleen favorieten (0)</button>
+        <button id="showAllThemesBtn" class="back-btn" style="display:none;">📚 Terug naar alle thema's</button>
 
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
             🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
@@ -292,8 +283,6 @@
     const themeCounterSpan = document.getElementById('themeCounter');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-    const randomThemeBtn = document.getElementById('randomThemeBtn');
-    const reshuffleThemesBtn = document.getElementById('reshuffleThemesBtn');
     const normalControls = document.getElementById('normalControls');
     const showFavoritesBtn = document.getElementById('showFavoritesBtn');
     const showAllThemesBtn = document.getElementById('showAllThemesBtn');
@@ -344,6 +333,17 @@
             }
         }
         return resultParts.join(', ');
+    }
+
+    // Tel het aantal favorieten
+    function getFavoritesCount() {
+        return wordsMetadata.filter(item => item.favoriet === 1).length;
+    }
+
+    // Werk de tekst van de favorietenknop bij met het aantal
+    function updateFavoritesButtonText() {
+        const count = getFavoritesCount();
+        showFavoritesBtn.textContent = `⭐ Alleen favorieten (${count})`;
     }
 
     // Lokale favorieten laden/bewaren
@@ -400,6 +400,8 @@
             currentFavorites.delete(rowIndex);
         }
         saveLocalFavorites();
+        // Update de knoptekst (aantal favorieten is gewijzigd)
+        updateFavoritesButtonText();
     }
 
     // Favoriet toggle (alleen lokaal)
@@ -454,6 +456,7 @@
         currentFavorites.clear();
         // Laad opgeslagen favorieten uit localStorage en pas metadata aan
         loadLocalFavorites();
+        updateFavoritesButtonText();
         return true;
     }
 
@@ -594,25 +597,6 @@
     }
 
     // Navigatie functies voor normale modus
-    function reshuffleThemeOrder() {
-        if (uniqueThemes.length === 0) return;
-        shuffledThemes = shuffleArray([...uniqueThemes]);
-        currentIndex = 0;
-        renderCurrentTheme();
-        setStatus(`🔄 Nieuwe thema-volgorde (${shuffledThemes.length} thema's)`, false);
-    }
-
-    function jumpToRandomTheme() {
-        if (!shuffledThemes.length) return;
-        let newIndex = Math.floor(Math.random() * shuffledThemes.length);
-        if (shuffledThemes.length > 1 && newIndex === currentIndex) {
-            newIndex = (newIndex + 1) % shuffledThemes.length;
-        }
-        currentIndex = newIndex;
-        renderCurrentTheme();
-        setStatus(`🎲 Willekeurig thema: ${shuffledThemes[currentIndex]}`, false);
-    }
-
     function prevTheme() {
         if (!shuffledThemes.length) return;
         currentIndex = (currentIndex - 1 + shuffledThemes.length) % shuffledThemes.length;
@@ -648,8 +632,6 @@
     // Event listeners
     prevBtn.addEventListener('click', prevTheme);
     nextBtn.addEventListener('click', nextTheme);
-    randomThemeBtn.addEventListener('click', jumpToRandomTheme);
-    reshuffleThemesBtn.addEventListener('click', reshuffleThemeOrder);
     showFavoritesBtn.addEventListener('click', enableFavoritesOnly);
     showAllThemesBtn.addEventListener('click', disableFavoritesOnly);
 
