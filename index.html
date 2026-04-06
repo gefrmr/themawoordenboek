@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · thema's · alleen eerste letter zichtbaar</title>
+    <title>Woordentrainer · thema's · alleen eerste letter zichtbaar (op één regel)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         * {
@@ -156,7 +156,10 @@
             background: #f8fafc;
             border-left: 6px solid #3b82f6;
             cursor: pointer;
-            flex-direction: column;
+            /* 🔧 FIX: letters naast elkaar (geen column meer) */
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 0 4px;
         }
 
         /* De suffix (letters na de eerste) zijn standaard geblurd */
