@@ -1,218 +1,560 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Woordentrainer · Favorieten werkend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>Woordentrainer · thema's · favorieten (lokaal)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        body { font-family: system-ui; background: #f1f5f9; padding: 20px; }
-        .container { max-width: 700px; margin: 0 auto; }
-        .card, .config-panel { background: white; border-radius: 28px; padding: 16px; margin-bottom: 20px; }
-        .status-msg { padding: 8px 12px; border-radius: 40px; background: #e9f5ef; }
-        .error-msg { background: #fee2e2; color: #b91c1c; }
-        .woorden-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
-        .tile { background: white; border-radius: 24px; padding: 18px 12px; position: relative; border: 1px solid #eef2ff; }
-        .woord-tile { background: #fef9e3; }
-        .vertaling-tile { background: #f8fafc; padding-left: 32px; cursor: pointer; display: flex; flex-wrap: wrap; gap: 0; }
-        .favorite-star { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1.4rem; cursor: pointer; color: #9ca3af; background: none; border: none; }
-        .favorite-star.active { color: #fbbf24; }
-        .blur-suffix { filter: blur(4px); }
-        .clear-suffix { filter: none; }
-        .nav-buttons { display: flex; gap: 16px; margin-top: 16px; }
-        button { background: #334155; border: none; padding: 12px; border-radius: 60px; color: white; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
-        .small-input { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-        input { flex: 1; padding: 8px; border-radius: 60px; border: 1px solid #cbd5e1; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f1f5f9;
+            padding: 20px 16px 40px;
+            color: #0f172a;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .config-panel {
+            background: white;
+            border-radius: 28px;
+            padding: 16px 18px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+        }
+
+        .status-msg {
+            font-size: 0.75rem;
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 40px;
+            display: inline-block;
+            background: #e9f5ef;
+            color: #2d6a4f;
+        }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .theme-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+            padding: 0 4px;
+        }
+
+        .thema-badge {
+            background: #e6f0fa;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #0c4e6e;
+        }
+
+        .counter {
+            font-size: 0.8rem;
+            background: #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-weight: 500;
+        }
+
+        .woorden-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin: 20px 0 28px;
+        }
+
+        .tile {
+            background: white;
+            border-radius: 24px;
+            padding: 18px 12px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+            word-break: break-word;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2ff;
+            min-height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.4;
+            transition: all 0.1s;
+            position: relative;
+        }
+
+        .woord-tile {
+            background: #fef9e3;
+            border-left: 6px solid #f59e0b;
+        }
+
+        .vertaling-tile {
+            background: #f8fafc;
+            border-left: 6px solid #3b82f6;
+            cursor: pointer;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 0;
+            justify-content: center;
+            padding: 18px 32px 18px 12px; /* ruimte rechts voor ster */
+        }
+
+        /* Ster rechts in de tegel */
+        .favorite-star {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #9ca3af;
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            transition: transform 0.1s;
+        }
+        .favorite-star.active {
+            color: #fbbf24;
+            text-shadow: 0 0 2px #d97706;
+        }
+        .favorite-star:active {
+            transform: translateY(-50%) scale(0.9);
+        }
+
+        .blur-suffix {
+            filter: blur(4px);
+            transition: filter 0.2s ease;
+        }
+
+        .clear-suffix {
+            filter: none;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            background: #334155;
+            padding: 14px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 60px;
+            text-align: center;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .shuffle-btn {
+            background: #2c3e2f;
+            margin-top: 12px;
+            width: 100%;
+            border: none;
+            padding: 12px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 28px;
+            color: #62748c;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 16px 12px 32px;
+            }
+            .tile {
+                padding: 14px 8px;
+                font-size: 0.9rem;
+            }
+            .thema-badge {
+                font-size: 1rem;
+            }
+            .vertaling-tile {
+                padding: 14px 28px 14px 8px;
+            }
+            .favorite-star {
+                right: 8px;
+                font-size: 1.2rem;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="config-panel">
-        <div id="statusMessage" class="status-msg">🔄 Laden...</div>
-        <div class="small-input">
-            <input type="text" id="appsScriptUrl" placeholder="Apps Script URL" value="">
-            <button id="testPostBtn">🔍 Test POST (rij 2)</button>
+        <div id="statusMessage" class="status-msg">🔄 Woorden worden geladen...</div>
+        <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
+            📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
+            ✨ Alleen de <strong>eerste letter</strong> van elk woord in de vertaling is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
+            ⭐ Klik op de ster (rechts) om een woordpaar als favoriet te markeren. Favorieten worden alleen in deze browser opgeslagen.
         </div>
-        <div id="testResult" style="font-size:0.75rem; margin-top:8px;"></div>
     </div>
-    <div class="card">
-        <div style="display:flex; justify-content:space-between;">
-            <span id="currentTheme">✨ Thema</span>
-            <span id="themeCounter">0/0</span>
+
+    <div class="card" style="padding: 20px 18px; background: white; border-radius: 28px;">
+        <div class="theme-header">
+            <span class="thema-badge" id="currentThemeName">✨ Laad een thema</span>
+            <span class="counter" id="themeCounter">0 / 0</span>
         </div>
-        <div id="wordsGrid" class="woorden-grid"></div>
+
+        <div id="wordsGrid" class="woorden-grid">
+            <div class="tile">📖 Even geduld</div>
+            <div class="tile">🔄 Data wordt geladen</div>
+        </div>
+
         <div class="nav-buttons">
-            <button id="prevBtn">◀ Vorig</button>
-            <button id="nextBtn">Volgend ▶</button>
+            <button id="prevBtn" class="nav-btn">◀ Vorig thema</button>
+            <button id="nextBtn" class="nav-btn">Volgend thema ▶</button>
         </div>
-        <button id="randomBtn">🎲 Willekeurig</button>
-        <button id="reshuffleBtn">🔄 Nieuwe volgorde</button>
+        <button id="randomThemeBtn" class="shuffle-btn">🎲 Willekeurig ander thema</button>
+        <button id="reshuffleThemesBtn" class="shuffle-btn" style="background:#475569; margin-top:8px;">🔄 Nieuwe thema-volgorde</button>
+        <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
+            🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
+            ⭐ Favorieten blijven bewaard in deze browser (localStorage).
+        </p>
     </div>
+    <footer>📖 Woordentrainer · eerste letter duidelijk, rest geblurd · klik om te ontbluren · ⭐ favorieten lokaal</footer>
 </div>
+
 <script>
-    const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv";
-    let APPS_SCRIPT_URL = "";
-    
-    let themeMap = new Map(), wordsMeta = [], themes = [], shuffled = [], idx = 0;
-    let favs = new Map();
-    const STORAGE_KEY = "favs";
-    
-    function status(msg, err=false) {
-        const div = document.getElementById('statusMessage');
-        div.textContent = msg;
-        err ? div.classList.add('error-msg') : div.classList.remove('error-msg');
-    }
-    
-    function loadLocalFavs() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            try {
-                const obj = JSON.parse(stored);
-                for (let [k,v] of Object.entries(obj)) if (v) favs.set(parseInt(k),1);
-            } catch(e) {}
+    // ==================== VASTE SHEET URL ====================
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv";
+
+    let themeMap = new Map();        // thema -> array van {woord, vertaling, rowIndex}
+    let wordsMetadata = [];          // alle items met rowIndex, thema, woord, vertaling
+    let uniqueThemes = [];
+    let shuffledThemes = [];
+    let currentIndex = 0;
+    let currentFavorites = new Map(); // key = rowIndex, value = 1
+
+    const STORAGE_KEY = 'woordtrainer_favorites_local';
+
+    // DOM elementen
+    const wordsGrid = document.getElementById('wordsGrid');
+    const currentThemeNameSpan = document.getElementById('currentThemeName');
+    const themeCounterSpan = document.getElementById('themeCounter');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const randomThemeBtn = document.getElementById('randomThemeBtn');
+    const reshuffleThemesBtn = document.getElementById('reshuffleThemesBtn');
+    const statusMsgDiv = document.getElementById('statusMessage');
+
+    function setStatus(message, isError = false) {
+        statusMsgDiv.textContent = message;
+        if (isError) {
+            statusMsgDiv.classList.add('error-msg');
+        } else {
+            statusMsgDiv.classList.remove('error-msg');
         }
     }
-    function saveLocalFavs() { const obj={}; for (let [k,v] of favs) obj[k]=v; localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
-    function updateLocal(row, isFav) {
-        for (let w of wordsMeta) if (w.row === row) w.fav = isFav ? 1 : 0;
-        for (let [_, list] of themeMap) for (let w of list) if (w.row === row) w.fav = isFav ? 1 : 0;
-        isFav ? favs.set(row,1) : favs.delete(row);
-        saveLocalFavs();
-    }
-    
-    async function setFavorite(row, isFav) {
-        if (!APPS_SCRIPT_URL) { updateLocal(row, isFav); render(); status(`⭐ Lokaal ${isFav?'+':'-'}`, false); return; }
-        try {
-            const res = await fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rowIndex: row, favorite: isFav ? 1 : 0 })
-            });
-            const txt = await res.text();
-            let json;
-            try { json = JSON.parse(txt); } catch(e) { throw new Error(txt.slice(0,100)); }
-            if (json.success) {
-                updateLocal(row, isFav);
-                render();
-                status(`⭐ ${isFav?'Toegevoegd':'Verwijderd'} in sheet`, false);
-            } else throw new Error(json.error || "Onbekend");
-        } catch(e) {
-            status(`⚠️ ${e.message} → alleen lokaal`, true);
-            updateLocal(row, isFav);
-            render();
+
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
         }
+        return arr;
     }
-    
-    async function testPost() {
-        const url = document.getElementById('appsScriptUrl').value.trim();
-        if (!url) { document.getElementById('testResult').innerText = "❌ Geen URL"; return; }
-        document.getElementById('testResult').innerText = "📤 Test POST rij 2...";
-        try {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rowIndex: 2, favorite: 1 })
-            });
-            const text = await res.text();
-            let json;
-            try { json = JSON.parse(text); } catch(e) { json = text; }
-            document.getElementById('testResult').innerHTML = `📥 Antwoord: <code>${JSON.stringify(json)}</code>`;
-            if (json.success) {
-                document.getElementById('testResult').style.color = "green";
-                APPS_SCRIPT_URL = url;
-                localStorage.setItem('appsScriptUrl', url);
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Bouw HTML voor een vertaling: eerste letter duidelijk, rest geblurd, zonder spaties ertussen
+    function buildBlurredTranslationHtml(translationText) {
+        if (!translationText || translationText.trim() === "") return "???";
+        let parts = translationText.split(',').map(part => part.trim());
+        let resultParts = [];
+        for (let part of parts) {
+            if (part.length === 0) continue;
+            const firstChar = part[0];
+            const rest = part.substring(1);
+            let escapedFirst = escapeHtml(firstChar);
+            let escapedRest = escapeHtml(rest);
+            if (rest.length === 0) {
+                resultParts.push(`<span>${escapedFirst}</span>`);
             } else {
-                document.getElementById('testResult').style.color = "red";
+                resultParts.push(`<span>${escapedFirst}</span><span class="blur-suffix">${escapedRest}</span>`);
             }
-        } catch(e) {
-            document.getElementById('testResult').innerHTML = `❌ Fout: ${e.message}`;
-            document.getElementById('testResult').style.color = "red";
         }
+        return resultParts.join(', ');
     }
-    
-    function render() {
-        if (!shuffled.length) return;
-        const theme = shuffled[idx];
-        const words = themeMap.get(theme) || [];
-        document.getElementById('currentTheme').innerText = theme;
-        document.getElementById('themeCounter').innerText = `${idx+1}/${shuffled.length}`;
-        let html = "";
-        for (let w of words) {
-            const isFav = (w.fav === 1);
-            const vertHtml = w.vert.split(',').map(p=>p.trim()).filter(p=>p).map(p=>`<span>${p[0]}</span><span class="blur-suffix">${p.slice(1)}</span>`).join(', ');
-            html += `
-                <div class="tile woord-tile">${escapeHtml(w.woord)}</div>
-                <div class="tile vertaling-tile" data-row="${w.row}">
-                    <button class="favorite-star ${isFav?'active':''}" data-row="${w.row}">${isFav?'★':'☆'}</button>
-                    <span class="translation-text">${vertHtml}</span>
+
+    // Lokale favorieten laden/bewaren
+    function loadLocalFavorites() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return;
+        try {
+            const favMap = JSON.parse(stored);
+            for (let [rowIndexStr, isFav] of Object.entries(favMap)) {
+                const rowIndex = parseInt(rowIndexStr);
+                if (isFav) {
+                    currentFavorites.set(rowIndex, 1);
+                    // Update metadata en themeMap
+                    for (let item of wordsMetadata) {
+                        if (item.rowIndex === rowIndex) item.favoriet = 1;
+                    }
+                    for (let [thema, words] of themeMap.entries()) {
+                        for (let w of words) {
+                            if (w.rowIndex === rowIndex) w.favoriet = 1;
+                        }
+                    }
+                }
+            }
+        } catch(e) { console.warn(e); }
+    }
+
+    function saveLocalFavorites() {
+        const obj = {};
+        for (let [k, v] of currentFavorites.entries()) {
+            obj[k] = v;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    }
+
+    function updateLocalFavorite(rowIndex, isFavorite) {
+        // Update metadata
+        for (let item of wordsMetadata) {
+            if (item.rowIndex === rowIndex) {
+                item.favoriet = isFavorite ? 1 : 0;
+                break;
+            }
+        }
+        for (let [thema, words] of themeMap.entries()) {
+            for (let w of words) {
+                if (w.rowIndex === rowIndex) {
+                    w.favoriet = isFavorite ? 1 : 0;
+                    break;
+                }
+            }
+        }
+        if (isFavorite) {
+            currentFavorites.set(rowIndex, 1);
+        } else {
+            currentFavorites.delete(rowIndex);
+        }
+        saveLocalFavorites();
+    }
+
+    // Favoriet toggle (alleen lokaal)
+    async function setFavorite(rowIndex, isFavorite) {
+        updateLocalFavorite(rowIndex, isFavorite);
+        renderCurrentTheme(); // hertekenen om ster te updaten
+        setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'} (lokaal opgeslagen)`, false);
+    }
+
+    // Verwerk CSV naar thema's
+    function processSheetData(csvRows) {
+        let startIdx = 0;
+        if (csvRows.length > 0) {
+            const firstRow = csvRows[0];
+            const possibleHeader = firstRow[0]?.toString().toLowerCase() || "";
+            if (possibleHeader.includes("hoofdthema") || possibleHeader === "hoofdthema" || firstRow[1]?.toString().toLowerCase().includes("thema")) {
+                startIdx = 1;
+            }
+        }
+        const themaColIdx = 1;
+        const woordColIdx = 2;
+        const vertalingColIdx = 3;
+        // favoriet kolom wordt niet gebruikt uit sheet, alleen lokaal
+
+        const tempMap = new Map();
+        const tempMetadata = [];
+
+        for (let i = startIdx; i < csvRows.length; i++) {
+            const row = csvRows[i];
+            if (!row || row.length < 4) continue;
+            const thema = row[themaColIdx] ? row[themaColIdx].toString().trim() : "";
+            const woord = row[woordColIdx] ? row[woordColIdx].toString().trim() : "";
+            const vertaling = row[vertalingColIdx] ? row[vertalingColIdx].toString().trim() : "";
+            if (thema === "" || woord === "") continue;
+
+            const sheetRowNumber = i + 1; // 1-based (rij 1 = header)
+            const favoriet = 0; // standaard niet favoriet, wordt later uit localStorage geladen
+            if (!tempMap.has(thema)) tempMap.set(thema, []);
+            tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex: sheetRowNumber });
+            tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex: sheetRowNumber });
+        }
+        if (tempMap.size === 0) throw new Error("Geen geldige thema's gevonden.");
+        themeMap = tempMap;
+        wordsMetadata = tempMetadata;
+        uniqueThemes = Array.from(themeMap.keys());
+        shuffledThemes = shuffleArray([...uniqueThemes]);
+        currentIndex = 0;
+        currentFavorites.clear();
+        // Laad opgeslagen favorieten uit localStorage en pas metadata aan
+        loadLocalFavorites();
+        return true;
+    }
+
+    // Render huidige thema met sterren rechts
+    function renderCurrentTheme() {
+        if (!shuffledThemes.length || !themeMap.size) {
+            wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Controleer de sheet-URL</div>`;
+            currentThemeNameSpan.textContent = "❓ Geen thema";
+            themeCounterSpan.textContent = `0 / 0`;
+            return;
+        }
+
+        const currentTheme = shuffledThemes[currentIndex];
+        const wordsList = themeMap.get(currentTheme) || [];
+        const totalThemes = shuffledThemes.length;
+        themeCounterSpan.textContent = `${currentIndex+1} / ${totalThemes}`;
+        currentThemeNameSpan.textContent = currentTheme;
+
+        if (!wordsList.length) {
+            wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">voor dit thema</div>`;
+            return;
+        }
+
+        let gridHtml = "";
+        for (let item of wordsList) {
+            const vertalingHtml = buildBlurredTranslationHtml(item.vertaling);
+            const isFav = (item.favoriet === 1);
+            const starClass = isFav ? "favorite-star active" : "favorite-star";
+            const starSymbol = isFav ? "★" : "☆";
+            gridHtml += `
+                <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
+                <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
+                    <span class="translation-text">${vertalingHtml}</span>
+                    <button class="${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
                 </div>
             `;
         }
-        document.getElementById('wordsGrid').innerHTML = html;
-        document.querySelectorAll('.vertaling-tile').forEach(t => {
-            const span = t.querySelector('.translation-text');
-            t.onclick = (e) => { if (!e.target.classList.contains('favorite-star')) span.querySelectorAll('.blur-suffix').forEach(s=>s.classList.remove('blur-suffix')); };
-        });
-        document.querySelectorAll('.favorite-star').forEach(star => {
-            star.onclick = async (e) => {
-                e.stopPropagation();
-                const row = parseInt(star.dataset.row);
-                const newFav = !star.classList.contains('active');
-                star.classList.toggle('active', newFav);
-                star.innerText = newFav ? '★' : '☆';
-                await setFavorite(row, newFav);
-            };
-        });
-    }
-    
-    function escapeHtml(s) { return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
-    function shuffle(a) { for (let i=a.length-1;i>0;i--) { let j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-    
-    async function loadSheet() {
-        status("🔄 Laden...");
-        try {
-            const res = await fetch(SHEET_CSV);
-            const csv = await res.text();
-            const parsed = Papa.parse(csv, { skipEmptyLines: true });
-            let start = 0;
-            if (parsed.data[0][0]?.toLowerCase().includes("hoofdthema")) start = 1;
-            const tempMap = new Map();
-            const tempMeta = [];
-            for (let i=start; i<parsed.data.length; i++) {
-                const row = parsed.data[i];
-                if (!row || row.length<4) continue;
-                const thema = row[1]?.trim(), woord = row[2]?.trim(), vert = row[3]?.trim(), fav = row[5]?.trim() === "1" ? 1 : 0;
-                if (!thema || !woord) continue;
-                const sheetRow = i+1;
-                if (!tempMap.has(thema)) tempMap.set(thema, []);
-                tempMap.get(thema).push({ woord, vert, fav, row: sheetRow });
-                tempMeta.push({ thema, woord, vert, fav, row: sheetRow });
+        wordsGrid.innerHTML = gridHtml;
+
+        // Ontblur bij klik op vertaling (niet op ster)
+        document.querySelectorAll('.vertaling-tile').forEach(tile => {
+            const textSpan = tile.querySelector('.translation-text');
+            if (textSpan) {
+                tile.addEventListener('click', function(e) {
+                    if (e.target.classList && e.target.classList.contains('favorite-star')) return;
+                    e.stopPropagation();
+                    textSpan.querySelectorAll('.blur-suffix').forEach(span => {
+                        span.classList.remove('blur-suffix');
+                        span.classList.add('clear-suffix');
+                    });
+                });
             }
-            if (tempMap.size === 0) throw new Error("Geen thema's");
-            themeMap = tempMap;
-            wordsMeta = tempMeta;
-            themes = Array.from(themeMap.keys());
-            shuffled = shuffle([...themes]);
-            idx = 0;
-            favs.clear();
-            for (let w of wordsMeta) if (w.fav === 1) favs.set(w.row, 1);
-            loadLocalFavs();
-            render();
-            status(`✅ ${themes.length} thema's geladen`);
-        } catch(e) { status(`Fout: ${e.message}`, true); }
+        });
+
+        // Ster klik
+        document.querySelectorAll('.favorite-star').forEach(star => {
+            star.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const rowIndex = parseInt(this.getAttribute('data-row-index'));
+                const currentlyFavorite = this.classList.contains('active');
+                const newFavorite = !currentlyFavorite;
+                // Optimistische update UI
+                if (newFavorite) {
+                    this.classList.add('active');
+                    this.textContent = '★';
+                } else {
+                    this.classList.remove('active');
+                    this.textContent = '☆';
+                }
+                await setFavorite(rowIndex, newFavorite);
+            });
+        });
     }
-    
-    document.getElementById('prevBtn').onclick = () => { if (shuffled.length) idx = (idx-1+shuffled.length)%shuffled.length; render(); };
-    document.getElementById('nextBtn').onclick = () => { if (shuffled.length) idx = (idx+1)%shuffled.length; render(); };
-    document.getElementById('randomBtn').onclick = () => { if (shuffled.length) { let i = Math.floor(Math.random()*shuffled.length); if (i===idx && shuffled.length>1) i=(i+1)%shuffled.length; idx=i; render(); } };
-    document.getElementById('reshuffleBtn').onclick = () => { if (themes.length) { shuffled = shuffle([...themes]); idx=0; render(); status("Volgorde geschud"); } };
-    document.getElementById('testPostBtn').onclick = testPost;
-    
-    const savedUrl = localStorage.getItem('appsScriptUrl');
-    if (savedUrl) document.getElementById('appsScriptUrl').value = savedUrl;
-    APPS_SCRIPT_URL = savedUrl || "";
-    
-    loadSheet();
+
+    // Data laden uit Google Sheets CSV
+    async function loadSheetData() {
+        setStatus("🔄 Bezig met laden van Google Sheet...", false);
+        try {
+            const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const csvText = await response.text();
+            if (!csvText.trim()) throw new Error("Leeg CSV-bestand");
+            const parsed = Papa.parse(csvText, { skipEmptyLines: true });
+            if (parsed.errors.length) console.warn(parsed.errors);
+            const rows = parsed.data;
+            if (!rows || rows.length < 2) throw new Error("CSV heeft te weinig rijen");
+            processSheetData(rows);
+            if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden");
+            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Favorieten worden lokaal opgeslagen.`, false);
+            renderCurrentTheme();
+        } catch (err) {
+            setStatus(`Fout bij laden: ${err.message}. Controleer de sheet-URL.`, true);
+            wordsGrid.innerHTML = `<div class="tile">❌ Fout</div><div class="tile">Kon sheet niet laden</div>`;
+        }
+    }
+
+    function reshuffleThemeOrder() {
+        if (uniqueThemes.length === 0) return;
+        shuffledThemes = shuffleArray([...uniqueThemes]);
+        currentIndex = 0;
+        renderCurrentTheme();
+        setStatus(`🔄 Nieuwe thema-volgorde (${shuffledThemes.length} thema's)`, false);
+    }
+
+    function jumpToRandomTheme() {
+        if (!shuffledThemes.length) return;
+        let newIndex = Math.floor(Math.random() * shuffledThemes.length);
+        if (shuffledThemes.length > 1 && newIndex === currentIndex) {
+            newIndex = (newIndex + 1) % shuffledThemes.length;
+        }
+        currentIndex = newIndex;
+        renderCurrentTheme();
+        setStatus(`🎲 Willekeurig thema: ${shuffledThemes[currentIndex]}`, false);
+    }
+
+    function prevTheme() {
+        if (!shuffledThemes.length) return;
+        currentIndex = (currentIndex - 1 + shuffledThemes.length) % shuffledThemes.length;
+        renderCurrentTheme();
+    }
+
+    function nextTheme() {
+        if (!shuffledThemes.length) return;
+        currentIndex = (currentIndex + 1) % shuffledThemes.length;
+        renderCurrentTheme();
+    }
+
+    // Event listeners
+    prevBtn.addEventListener('click', prevTheme);
+    nextBtn.addEventListener('click', nextTheme);
+    randomThemeBtn.addEventListener('click', jumpToRandomTheme);
+    reshuffleThemesBtn.addEventListener('click', reshuffleThemeOrder);
+
+    // Start
+    loadSheetData();
 </script>
 </body>
 </html>
