@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · thematische oefeningen · blur & klik</title>
+    <title>Woordentrainer · thema's · alleen eerste letter zichtbaar</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         * {
@@ -24,13 +24,6 @@
             margin: 0 auto;
         }
 
-        .card {
-            background: white;
-            border-radius: 28px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-
         .config-panel {
             background: white;
             border-radius: 28px;
@@ -38,13 +31,6 @@
             margin-bottom: 24px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.03);
             border: 1px solid #e2e8f0;
-        }
-
-        .config-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            color: #1e293b;
         }
 
         .url-input-group {
@@ -170,16 +156,17 @@
             background: #f8fafc;
             border-left: 6px solid #3b82f6;
             cursor: pointer;
+            flex-direction: column;
+        }
+
+        /* De suffix (letters na de eerste) zijn standaard geblurd */
+        .blur-suffix {
+            filter: blur(4px);
             transition: filter 0.2s ease;
         }
 
-        /* 🔥 Blur-effect (geen puntjes meer) */
-        .blurred {
-            filter: blur(5px);
-        }
-
-        /* Bij klik wordt de blur verwijderd (ontblurd) */
-        .vertaling-tile.clear {
+        /* Bij klik wordt de blur verwijderd */
+        .clear-suffix {
             filter: none;
         }
 
@@ -231,7 +218,6 @@
 <body>
 <div class="container">
     <div class="config-panel">
-        <div class="config-title">📄 Koppel aan Google Sheet (CSV)</div>
         <div class="url-input-group">
             <input type="text" id="sheetUrlInput" class="url-input" placeholder="Plak de CSV-export-URL van je Google Sheet" 
                    value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv">
@@ -245,11 +231,11 @@
         <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
             📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
             🔗 Publiceren via Bestand → Delen → Publiceren op web → als CSV.<br>
-            ✨ Tip: tik op een geblurde vertaling → wordt helder!
+            ✨ Alleen de <strong>eerste letter</strong> van elk woord in de vertaling is zichtbaar. Tik om de rest te ontbluren.
         </div>
     </div>
 
-    <div class="card" style="padding: 20px 18px;">
+    <div class="card" style="padding: 20px 18px; background: white; border-radius: 28px;">
         <div class="theme-header">
             <span class="thema-badge" id="currentThemeName">✨ Laad een thema</span>
             <span class="counter" id="themeCounter">0 / 0</span>
@@ -266,15 +252,14 @@
         </div>
         <button id="randomThemeBtn" class="btn shuffle-btn">🎲 Willekeurig ander thema</button>
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
-            🔍 Vertalingen beginnen met een <strong>blur</strong>. Tik erop om het antwoord te zien.
+            🔍 Elke vertaling toont <strong>alleen de eerste letter(s)</strong> – de rest is wazig. Tik op een tegel om het hele woord te zien.
         </p>
     </div>
-    <footer>📖 Woordentrainer · blur i.p.v. puntjes · klik om te ontbluren</footer>
+    <footer>📖 Woordentrainer · eerste letter duidelijk, rest geblurd · klik om te ontbluren</footer>
 </div>
 
 <script>
     // ---------- Globale variabelen ----------
-    let rawSheetData = [];
     let themeMap = new Map();       // thema -> [{woord, vertaling}]
     let uniqueThemes = [];
     let shuffledThemes = [];
@@ -302,7 +287,6 @@
         }
     }
 
-    // Hulp: array shufflen
     function shuffleArray(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -311,7 +295,7 @@
         return arr;
     }
 
-    // Verwerk CSV naar thema's (verwacht kolommen: thema=index1, woord=2, vertaling=3)
+    // Verwerk CSV naar thema's (kolom B=thema, C=woord, D=vertaling)
     function processSheetData(csvRows) {
         let startIdx = 0;
         if (csvRows.length > 0) {
@@ -344,7 +328,144 @@
         return true;
     }
 
-    // Nieuwe willekeurige volgorde (shuffle thema's)
+    // Bouw HTML voor een vertaling: eerste letter van elk woord duidelijk, rest geblurd
+    function buildBlurredTranslationHtml(translationText) {
+        if (!translationText || translationText.trim() === "") return "???";
+        // Splits op komma's (houd spaties rondom)
+        let parts = translationText.split(',').map(part => part.trim());
+        let resultParts = [];
+        for (let part of parts) {
+            if (part.length === 0) {
+                resultParts.push("");
+                continue;
+            }
+            // Eerste karakter, de rest
+            const firstChar = part[0];
+            const rest = part.substring(1);
+            let escapedFirst = escapeHtml(firstChar);
+            let escapedRest = escapeHtml(rest);
+            if (rest.length === 0) {
+                // Alleen eerste letter, geen blur nodig
+                resultParts.push(`<span>${escapedFirst}</span>`);
+            } else {
+                resultParts.push(`<span>${escapedFirst}</span><span class="blur-suffix">${escapedRest}</span>`);
+            }
+        }
+        // Voeg komma's en spaties weer toe
+        let html = resultParts.join(', ');
+        return html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Render huidige thema met de nieuwe "alleen eerste letter zichtbaar" structuur
+    function renderCurrentTheme() {
+        if (!shuffledThemes.length || !themeMap.size) {
+            wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Laad een sheet of gebruik voorbeeld</div>`;
+            currentThemeNameSpan.textContent = "❓ Geen thema";
+            themeCounterSpan.textContent = `0 / 0`;
+            return;
+        }
+
+        const currentTheme = shuffledThemes[currentIndex];
+        const wordsList = themeMap.get(currentTheme) || [];
+        const totalThemes = shuffledThemes.length;
+        themeCounterSpan.textContent = `${currentIndex+1} / ${totalThemes}`;
+        currentThemeNameSpan.textContent = currentTheme;
+
+        if (!wordsList.length) {
+            wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">voor dit thema</div>`;
+            return;
+        }
+
+        let gridHtml = "";
+        for (let item of wordsList) {
+            const vertalingHtml = buildBlurredTranslationHtml(item.vertaling);
+            gridHtml += `
+                <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
+                <div class="tile vertaling-tile" data-original-full="${escapeHtml(item.vertaling)}">${vertalingHtml}</div>
+            `;
+        }
+        wordsGrid.innerHTML = gridHtml;
+
+        // Voeg klik-functionaliteit toe: ontblur alle suffixen binnen deze tegel
+        const vertalingTiles = document.querySelectorAll('.vertaling-tile');
+        vertalingTiles.forEach(tile => {
+            tile.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Vind alle .blur-suffix elementen in deze tegel en verander naar .clear-suffix
+                const blurSpans = this.querySelectorAll('.blur-suffix');
+                blurSpans.forEach(span => {
+                    span.classList.remove('blur-suffix');
+                    span.classList.add('clear-suffix');
+                });
+            });
+        });
+    }
+
+    // Data laden uit Google Sheets CSV
+    async function loadFromGoogleSheetUrl(url) {
+        if (!url || url.trim() === "") {
+            setStatus("Voer een geldige CSV-URL in", true);
+            return false;
+        }
+        setStatus("🔄 Bezig met laden...", false);
+        try {
+            const response = await fetch(url, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const csvText = await response.text();
+            if (!csvText.trim()) throw new Error("Leeg bestand");
+            const parsed = Papa.parse(csvText, { skipEmptyLines: true });
+            if (parsed.errors.length) console.warn(parsed.errors);
+            const rows = parsed.data;
+            if (!rows || rows.length < 2) throw new Error("CSV heeft te weinig rijen");
+            processSheetData(rows);
+            if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden");
+            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Alleen eerste letter(s) zichtbaar.`, false);
+            renderCurrentTheme();
+            return true;
+        } catch (err) {
+            setStatus(`Fout: ${err.message}`, true);
+            return false;
+        }
+    }
+
+    // Voorbeelddata (werkt met de nieuwe weergave)
+    function loadSampleData() {
+        const sampleRows = [
+            ["Dieren", "Boerderij", "koe", "cow", "zelfstandig"],
+            ["Dieren", "Boerderij", "varken", "pig", "zelfstandig"],
+            ["Dieren", "Boerderij", "kip", "chicken", "zelfstandig"],
+            ["Dieren", "Wilde dieren", "leeuw", "lion", "zelfstandig"],
+            ["Dieren", "Wilde dieren", "olifant", "elephant", "zelfstandig"],
+            ["Keuken", "Groenten", "tomaat", "tomato", "zelfstandig"],
+            ["Keuken", "Groenten", "komkommer", "cucumber", "zelfstandig"],
+            ["Keuken", "Fruit", "appel", "apple", "zelfstandig"],
+            ["Keuken", "Fruit", "banaan", "banana", "zelfstandig"],
+            ["Vervoer", "Voertuigen", "auto", "car", "zelfstandig"],
+            ["Vervoer", "Voertuigen", "fiets", "bicycle", "zelfstandig"],
+            ["Vervoer", "Luchtvaart", "vliegtuig", "airplane, aircraft", "zelfstandig"],
+            ["Vervoer", "Luchtvaart", "helikopter", "helicopter", "zelfstandig"],
+            ["Bijvoeglijk", "Adjectieven", "groot", "big, large", "bijvoeglijk"],
+            ["Bijvoeglijk", "Adjectieven", "mooi", "beautiful, nice", "bijvoeglijk"]
+        ];
+        try {
+            processSheetData(sampleRows);
+            setStatus(`📚 Voorbeelddata geladen — ${uniqueThemes.length} thema's. Tik op een vertaling om de rest te zien.`, false);
+            renderCurrentTheme();
+        } catch (err) {
+            setStatus(`Fout in voorbeelddata: ${err.message}`, true);
+        }
+    }
+
     function reshuffleThemeOrder() {
         if (uniqueThemes.length === 0) {
             setStatus("Geen data geladen. Laad eerst een sheet.", true);
@@ -380,117 +501,6 @@
         renderCurrentTheme();
     }
 
-    // Tekst ontsmetten (XSS)
-    function escapeHtml(str) {
-        if (!str) return "";
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    // RENDEREN met blur ipv puntjes + klik om te ontbluren
-    function renderCurrentTheme() {
-        if (!shuffledThemes.length || !themeMap.size) {
-            wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Laad een sheet of gebruik voorbeeld</div>`;
-            currentThemeNameSpan.textContent = "❓ Geen thema";
-            themeCounterSpan.textContent = `0 / 0`;
-            return;
-        }
-
-        const currentTheme = shuffledThemes[currentIndex];
-        const wordsList = themeMap.get(currentTheme) || [];
-        const totalThemes = shuffledThemes.length;
-        themeCounterSpan.textContent = `${currentIndex+1} / ${totalThemes}`;
-        currentThemeNameSpan.textContent = currentTheme;
-
-        if (!wordsList.length) {
-            wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">voor dit thema</div>`;
-            return;
-        }
-
-        // Bouw grid met 2 kolommen: woord (links) en vertaling (rechts mét blur)
-        let gridHtml = "";
-        for (let item of wordsList) {
-            const vertalingOrig = escapeHtml(item.vertaling);
-            gridHtml += `
-                <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
-                <div class="tile vertaling-tile blurred" data-original="${vertalingOrig}">${vertalingOrig}</div>
-            `;
-        }
-        wordsGrid.innerHTML = gridHtml;
-
-        // Voeg klik-listeners toe aan alle vertaling-tegels (ontblurren)
-        const vertalingTiles = document.querySelectorAll('.vertaling-tile');
-        vertalingTiles.forEach(tile => {
-            tile.addEventListener('click', function(e) {
-                e.stopPropagation();
-                // Verwijder de 'blurred' klasse → woord wordt helder
-                this.classList.remove('blurred');
-                // Optioneel: toevoegen van een 'clear' klasse voor styling
-                this.classList.add('clear');
-            });
-        });
-    }
-
-    // Data laden vanuit Google Sheets CSV
-    async function loadFromGoogleSheetUrl(url) {
-        if (!url || url.trim() === "") {
-            setStatus("Voer een geldige CSV-URL in", true);
-            return false;
-        }
-        setStatus("🔄 Bezig met laden...", false);
-        try {
-            const response = await fetch(url, { cache: "no-store" });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const csvText = await response.text();
-            if (!csvText.trim()) throw new Error("Leeg bestand");
-            const parsed = Papa.parse(csvText, { skipEmptyLines: true });
-            if (parsed.errors.length) console.warn(parsed.errors);
-            const rows = parsed.data;
-            if (!rows || rows.length < 2) throw new Error("CSV heeft te weinig rijen");
-            processSheetData(rows);
-            if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden");
-            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Tik op vertalingen om te ontbluren.`, false);
-            renderCurrentTheme();
-            return true;
-        } catch (err) {
-            setStatus(`Fout: ${err.message}`, true);
-            return false;
-        }
-    }
-
-    // Voorbeelddata (geen puntjes, gewone tekst, blur wordt toegepast)
-    function loadSampleData() {
-        const sampleRows = [
-            ["Dieren", "Boerderij", "koe", "cow", "zelfstandig"],
-            ["Dieren", "Boerderij", "varken", "pig", "zelfstandig"],
-            ["Dieren", "Boerderij", "kip", "chicken", "zelfstandig"],
-            ["Dieren", "Wilde dieren", "leeuw", "lion", "zelfstandig"],
-            ["Dieren", "Wilde dieren", "olifant", "elephant", "zelfstandig"],
-            ["Keuken", "Groenten", "tomaat", "tomato", "zelfstandig"],
-            ["Keuken", "Groenten", "komkommer", "cucumber", "zelfstandig"],
-            ["Keuken", "Fruit", "appel", "apple", "zelfstandig"],
-            ["Keuken", "Fruit", "banaan", "banana", "zelfstandig"],
-            ["Vervoer", "Voertuigen", "auto", "car", "zelfstandig"],
-            ["Vervoer", "Voertuigen", "fiets", "bicycle", "zelfstandig"],
-            ["Vervoer", "Luchtvaart", "vliegtuig", "airplane, aircraft", "zelfstandig"],
-            ["Vervoer", "Luchtvaart", "helikopter", "helicopter", "zelfstandig"],
-            ["Bijvoeglijk", "Adjectieven", "groot", "big, large", "bijvoeglijk"],
-            ["Bijvoeglijk", "Adjectieven", "mooi", "beautiful, nice", "bijvoeglijk"]
-        ];
-        try {
-            processSheetData(sampleRows);
-            setStatus(`📚 Voorbeelddata geladen — ${uniqueThemes.length} thema's. Tik op een vertaling om te ontbluren.`, false);
-            renderCurrentTheme();
-        } catch (err) {
-            setStatus(`Fout in voorbeelddata: ${err.message}`, true);
-        }
-    }
-
-    // Event listeners
     function initEventListeners() {
         prevBtn.addEventListener('click', prevTheme);
         nextBtn.addEventListener('click', nextTheme);
