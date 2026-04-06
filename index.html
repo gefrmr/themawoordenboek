@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · thema's · met favorieten</title>
+    <title>Woordentrainer · thema's · met favorieten (lokaal + online)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         * {
@@ -181,6 +181,31 @@
             cursor: pointer;
         }
 
+        .small-input {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .small-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 60px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+        .small-input button {
+            background: #475569;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 60px;
+            color: white;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
         footer {
             font-size: 0.7rem;
             text-align: center;
@@ -215,8 +240,12 @@
         <div id="statusMessage" class="status-msg">🔄 Woorden worden geladen...</div>
         <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
             📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype, <strong>F=favoriet (0/1)</strong>.<br>
-            ✨ Alleen de <strong>eerste letter</strong> van elk woord in de vertaling is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
-            ⭐ Klik op de ster om een woordpaar als favoriet te markeren (opslaan in kolom F).
+            ✨ Alleen de <strong>eerste letter</strong> van elk woord is zichtbaar. Tik op een vertaling om te ontbluren.<br>
+            ⭐ Klik op de ster om favoriet te maken (lokaal + online indien verbinding).
+        </div>
+        <div class="small-input">
+            <input type="text" id="appsScriptUrlInput" placeholder="URL van Google Apps Script (optioneel)" value="https://script.google.com/macros/s/AKfycbwHHcIi9H5xoYzLRmizYIrwZnwzi3FvxVYu1oUoYxpPgKMEvVGZSdmkuqoaCH2_zF4D/exec">
+            <button id="testEndpointBtn">🔍 Test</button>
         </div>
     </div>
 
@@ -238,16 +267,17 @@
         <button id="randomThemeBtn" class="shuffle-btn">🎲 Willekeurig ander thema</button>
         <button id="reshuffleThemesBtn" class="shuffle-btn" style="background:#475569; margin-top:8px;">🔄 Nieuwe thema-volgorde</button>
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
-            🔍 Elke vertaling toont <strong>alleen de eerste letter(s)</strong> – de rest is wazig. Tik op een tegel om het hele woord te zien.
+            🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
+            ⭐ Favorieten worden lokaal opgeslagen én (indien online) naar de sheet weggeschreven.
         </p>
     </div>
-    <footer>📖 Woordentrainer · eerste letter duidelijk, rest geblurd · klik om te ontbluren · ⭐ favorieten</footer>
+    <footer>📖 Woordentrainer · eerste letter duidelijk, rest geblurd · klik om te ontbluren · ⭐ favorieten (lokaal + sheet)</footer>
 </div>
 
 <script>
     // ==================== HARDCODED URLS ====================
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHHcIi9H5xoYzLRmizYIrwZnwzi3FvxVYu1oUoYxpPgKMEvVGZSdmkuqoaCH2_zF4D/exec";
+    let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHHcIi9H5xoYzLRmizYIrwZnwzi3FvxVYu1oUoYxpPgKMEvVGZSdmkuqoaCH2_zF4D/exec";
     // ========================================================
 
     let themeMap = new Map();
@@ -257,6 +287,9 @@
     let currentIndex = 0;
     let currentFavorites = new Map();
 
+    // localStorage sleutel voor favorieten (backup)
+    const STORAGE_KEY = 'woordtrainer_favorites';
+
     const wordsGrid = document.getElementById('wordsGrid');
     const currentThemeNameSpan = document.getElementById('currentThemeName');
     const themeCounterSpan = document.getElementById('themeCounter');
@@ -265,6 +298,16 @@
     const randomThemeBtn = document.getElementById('randomThemeBtn');
     const reshuffleThemesBtn = document.getElementById('reshuffleThemesBtn');
     const statusMsgDiv = document.getElementById('statusMessage');
+    const appsScriptUrlInput = document.getElementById('appsScriptUrlInput');
+    const testEndpointBtn = document.getElementById('testEndpointBtn');
+
+    // Laad opgeslagen URL uit localStorage
+    if (localStorage.getItem('appsScriptUrl')) {
+        APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl');
+        appsScriptUrlInput.value = APPS_SCRIPT_URL;
+    } else {
+        appsScriptUrlInput.value = APPS_SCRIPT_URL;
+    }
 
     function setStatus(message, isError = false) {
         statusMsgDiv.textContent = message;
@@ -315,6 +358,115 @@
         return resultParts.join(', ');
     }
 
+    // Laad favorieten uit localStorage en pas metadata aan
+    function loadLocalFavorites() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return;
+        try {
+            const favMap = JSON.parse(stored);
+            for (let [rowIndexStr, isFav] of Object.entries(favMap)) {
+                const rowIndex = parseInt(rowIndexStr);
+                if (isFav) {
+                    currentFavorites.set(rowIndex, 1);
+                    // Update metadata
+                    for (let item of wordsMetadata) {
+                        if (item.rowIndex === rowIndex) item.favoriet = 1;
+                    }
+                    for (let [thema, words] of themeMap.entries()) {
+                        for (let w of words) {
+                            if (w.rowIndex === rowIndex) w.favoriet = 1;
+                        }
+                    }
+                }
+            }
+        } catch(e) { console.warn(e); }
+    }
+
+    function saveLocalFavorites() {
+        const obj = {};
+        for (let [k,v] of currentFavorites.entries()) {
+            obj[k] = v;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    }
+
+    function updateLocalFavorite(rowIndex, isFavorite) {
+        for (let item of wordsMetadata) {
+            if (item.rowIndex === rowIndex) {
+                item.favoriet = isFavorite ? 1 : 0;
+                break;
+            }
+        }
+        for (let [thema, words] of themeMap.entries()) {
+            for (let w of words) {
+                if (w.rowIndex === rowIndex) {
+                    w.favoriet = isFavorite ? 1 : 0;
+                    break;
+                }
+            }
+        }
+        if (isFavorite) currentFavorites.set(rowIndex, 1);
+        else currentFavorites.delete(rowIndex);
+        saveLocalFavorites();
+    }
+
+    async function setFavorite(rowIndex, isFavorite) {
+        const url = APPS_SCRIPT_URL;
+        if (!url || url.trim() === "") {
+            // Geen endpoint: alleen lokaal
+            updateLocalFavorite(rowIndex, isFavorite);
+            renderCurrentTheme();
+            setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'} (alleen lokaal)`, false);
+            return;
+        }
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rowIndex: rowIndex, favorite: isFavorite ? 1 : 0 })
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const result = await response.json();
+            if (result.success) {
+                updateLocalFavorite(rowIndex, isFavorite);
+                renderCurrentTheme();
+                setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'} (opgeslagen in sheet)`, false);
+            } else {
+                throw new Error(result.error || "Onbekende fout van endpoint");
+            }
+        } catch (err) {
+            console.error("Fout bij favoriet:", err);
+            setStatus(`⚠️ Kan niet opslaan in sheet: ${err.message}. Favoriet is alleen lokaal opgeslagen.`, true);
+            // Toch lokaal bijwerken, zodat de gebruiker niet alles kwijtraakt
+            updateLocalFavorite(rowIndex, isFavorite);
+            renderCurrentTheme();
+        }
+    }
+
+    async function testEndpoint() {
+        const url = appsScriptUrlInput.value.trim();
+        if (!url) {
+            setStatus("Geen URL ingevuld", true);
+            return;
+        }
+        setStatus("🔍 Testen van endpoint...", false);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ test: true })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setStatus(`✅ Endpoint reageert! Response: ${JSON.stringify(data)}`, false);
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        } catch (err) {
+            setStatus(`❌ Endpoint niet bereikbaar: ${err.message}`, true);
+        }
+    }
+
     function processSheetData(csvRows) {
         let startIdx = 0;
         if (csvRows.length > 0) {
@@ -341,10 +493,7 @@
             let favoriet = (row[favorietColIdx] && row[favorietColIdx].toString().trim() === "1") ? 1 : 0;
             if (thema === "" || woord === "") continue;
 
-            // Bereken het echte rijnummer in de Google Sheet (1-based)
-            // De CSV-export heeft een headerrij (rij 1). Data start bij rij 2.
-            const sheetRowNumber = i + 1; // omdat i de index is in de array (0 = header, 1 = eerste data)
-
+            const sheetRowNumber = i + 1; // 1-based (rij 1 = header, rij 2 = eerste data)
             if (!tempMap.has(thema)) tempMap.set(thema, []);
             tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex: sheetRowNumber });
             tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex: sheetRowNumber });
@@ -359,53 +508,9 @@
         wordsMetadata.forEach(item => {
             if (item.favoriet === 1) currentFavorites.set(item.rowIndex, 1);
         });
+        // Overrule met lokaal opgeslagen favorieten (die kunnen nieuwer zijn)
+        loadLocalFavorites();
         return true;
-    }
-
-    async function setFavorite(rowIndex, isFavorite) {
-        if (!APPS_SCRIPT_URL) {
-            setStatus("⚠️ Geen Apps Script URL beschikbaar. Favoriet wordt lokaal opgeslagen.", true);
-            updateLocalFavorite(rowIndex, isFavorite);
-            renderCurrentTheme();
-            return;
-        }
-        try {
-            const response = await fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rowIndex: rowIndex, favorite: isFavorite ? 1 : 0 })
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const result = await response.json();
-            if (result.success) {
-                updateLocalFavorite(rowIndex, isFavorite);
-                renderCurrentTheme();
-                setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'}!`, false);
-            } else {
-                throw new Error(result.error || "Onbekende fout");
-            }
-        } catch (err) {
-            setStatus(`Fout bij opslaan favoriet: ${err.message}`, true);
-        }
-    }
-
-    function updateLocalFavorite(rowIndex, isFavorite) {
-        for (let item of wordsMetadata) {
-            if (item.rowIndex === rowIndex) {
-                item.favoriet = isFavorite ? 1 : 0;
-                break;
-            }
-        }
-        for (let [thema, words] of themeMap.entries()) {
-            for (let w of words) {
-                if (w.rowIndex === rowIndex) {
-                    w.favoriet = isFavorite ? 1 : 0;
-                    break;
-                }
-            }
-        }
-        if (isFavorite) currentFavorites.set(rowIndex, 1);
-        else currentFavorites.delete(rowIndex);
     }
 
     function renderCurrentTheme() {
@@ -465,7 +570,7 @@
                 const rowIndex = parseInt(this.getAttribute('data-row-index'));
                 const currentlyFavorite = this.classList.contains('active');
                 const newFavorite = !currentlyFavorite;
-                // Optimistische update
+                // Optimistische update UI
                 if (newFavorite) {
                     this.classList.add('active');
                     this.textContent = '★';
@@ -491,7 +596,7 @@
             if (!rows || rows.length < 2) throw new Error("CSV heeft te weinig rijen");
             processSheetData(rows);
             if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden");
-            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Gebruik de sterren om favorieten te markeren.`, false);
+            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Favorieten worden lokaal onthouden.`, false);
             renderCurrentTheme();
         } catch (err) {
             setStatus(`Fout bij laden: ${err.message}. Controleer de sheet-URL.`, true);
@@ -530,10 +635,21 @@
         renderCurrentTheme();
     }
 
+    // Event listeners
     prevBtn.addEventListener('click', prevTheme);
     nextBtn.addEventListener('click', nextTheme);
     randomThemeBtn.addEventListener('click', jumpToRandomTheme);
     reshuffleThemesBtn.addEventListener('click', reshuffleThemeOrder);
+    testEndpointBtn.addEventListener('click', () => {
+        APPS_SCRIPT_URL = appsScriptUrlInput.value.trim();
+        localStorage.setItem('appsScriptUrl', APPS_SCRIPT_URL);
+        testEndpoint();
+    });
+    appsScriptUrlInput.addEventListener('change', () => {
+        APPS_SCRIPT_URL = appsScriptUrlInput.value.trim();
+        localStorage.setItem('appsScriptUrl', APPS_SCRIPT_URL);
+        setStatus("📡 Endpoint URL bijgewerkt", false);
+    });
 
     // Start
     loadSheetData();
