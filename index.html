@@ -1,143 +1,112 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · met favorieten (definitief)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woordentrainer · Favorieten werkend</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: system-ui; background: #f1f5f9; padding: 20px; }
         .container { max-width: 700px; margin: 0 auto; }
-        .config-panel, .card { background: white; border-radius: 28px; padding: 16px; margin-bottom: 20px; }
-        .status-msg { font-size: 0.75rem; padding: 8px 12px; border-radius: 40px; background: #e9f5ef; }
+        .card, .config-panel { background: white; border-radius: 28px; padding: 16px; margin-bottom: 20px; }
+        .status-msg { padding: 8px 12px; border-radius: 40px; background: #e9f5ef; }
         .error-msg { background: #fee2e2; color: #b91c1c; }
         .woorden-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
-        .tile { background: white; border-radius: 24px; padding: 18px 12px; text-align: center; border: 1px solid #eef2ff; position: relative; }
+        .tile { background: white; border-radius: 24px; padding: 18px 12px; position: relative; border: 1px solid #eef2ff; }
         .woord-tile { background: #fef9e3; }
-        .vertaling-tile { background: #f8fafc; padding-left: 32px; cursor: pointer; display: flex; flex-wrap: wrap; gap: 0; justify-content: flex-start; }
+        .vertaling-tile { background: #f8fafc; padding-left: 32px; cursor: pointer; display: flex; flex-wrap: wrap; gap: 0; }
         .favorite-star { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1.4rem; cursor: pointer; color: #9ca3af; background: none; border: none; }
         .favorite-star.active { color: #fbbf24; }
         .blur-suffix { filter: blur(4px); }
         .clear-suffix { filter: none; }
-        .nav-buttons { display: flex; gap: 16px; margin: 16px 0 8px; }
-        .nav-btn, .shuffle-btn { background: #334155; border: none; padding: 12px; border-radius: 60px; color: white; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+        .nav-buttons { display: flex; gap: 16px; margin-top: 16px; }
+        button { background: #334155; border: none; padding: 12px; border-radius: 60px; color: white; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
         .small-input { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-        .small-input input { flex: 1; padding: 8px; border-radius: 60px; border: 1px solid #cbd5e1; }
-        .small-input button { background: #475569; border: none; padding: 6px 12px; border-radius: 60px; color: white; cursor: pointer; }
-        footer { font-size: 0.7rem; text-align: center; margin-top: 20px; color: #62748c; }
+        input { flex: 1; padding: 8px; border-radius: 60px; border: 1px solid #cbd5e1; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="config-panel">
-        <div id="statusMessage" class="status-msg">🔄 Woorden worden geladen...</div>
+        <div id="statusMessage" class="status-msg">🔄 Laden...</div>
         <div class="small-input">
-            <input type="text" id="appsScriptUrlInput" placeholder="URL van Google Apps Script" value="https://script.google.com/macros/s/AKfycbzxcN_j_3At5MTdqJ0EvRzn99uzP1vKzEfSVFSqo-9ORfawzsBxPd_l_Tf6RmQ8-Fj0/exec">
+            <input type="text" id="appsScriptUrl" placeholder="Apps Script URL" value="">
             <button id="testPostBtn">🔍 Test POST (rij 2)</button>
         </div>
-        <div id="endpointStatus" style="font-size:0.7rem; margin-top:5px;"></div>
-        <div style="font-size:0.7rem; margin-top:10px;">⭐ Klik op ster → opslaan in kolom F van de sheet.</div>
+        <div id="testResult" style="font-size:0.75rem; margin-top:8px;"></div>
     </div>
     <div class="card">
-        <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
-            <span id="currentThemeName" class="thema-badge">✨ Thema</span>
-            <span id="themeCounter" class="counter">0/0</span>
+        <div style="display:flex; justify-content:space-between;">
+            <span id="currentTheme">✨ Thema</span>
+            <span id="themeCounter">0/0</span>
         </div>
         <div id="wordsGrid" class="woorden-grid"></div>
         <div class="nav-buttons">
-            <button id="prevBtn" class="nav-btn">◀ Vorig</button>
-            <button id="nextBtn" class="nav-btn">Volgend ▶</button>
+            <button id="prevBtn">◀ Vorig</button>
+            <button id="nextBtn">Volgend ▶</button>
         </div>
-        <button id="randomThemeBtn" class="shuffle-btn">🎲 Willekeurig thema</button>
-        <button id="reshuffleThemesBtn" class="shuffle-btn" style="background:#475569;">🔄 Nieuwe volgorde</button>
+        <button id="randomBtn">🎲 Willekeurig</button>
+        <button id="reshuffleBtn">🔄 Nieuwe volgorde</button>
     </div>
-    <footer>📖 Eerste letter duidelijk, rest geblurd · klik op vertaling om te ontbluren</footer>
 </div>
-
 <script>
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv";
-    let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzxcN_j_3At5MTdqJ0EvRzn99uzP1vKzEfSVFSqo-9ORfawzsBxPd_l_Tf6RmQ8-Fj0/exec";
+    const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv";
+    let APPS_SCRIPT_URL = "";
     
-    let themeMap = new Map(), wordsMetadata = [], uniqueThemes = [], shuffledThemes = [], currentIndex = 0;
-    let currentFavorites = new Map();
-    const STORAGE_KEY = 'woordtrainer_favorites';
+    let themeMap = new Map(), wordsMeta = [], themes = [], shuffled = [], idx = 0;
+    let favs = new Map();
+    const STORAGE_KEY = "favs";
     
-    const wordsGrid = document.getElementById('wordsGrid');
-    const currentThemeNameSpan = document.getElementById('currentThemeName');
-    const themeCounterSpan = document.getElementById('themeCounter');
-    const statusMsgDiv = document.getElementById('statusMessage');
-    const appsScriptUrlInput = document.getElementById('appsScriptUrlInput');
-    const endpointStatusDiv = document.getElementById('endpointStatus');
-    
-    function setStatus(msg, isErr=false) {
-        statusMsgDiv.textContent = msg;
-        isErr ? statusMsgDiv.classList.add('error-msg') : statusMsgDiv.classList.remove('error-msg');
-    }
-    function setEndpointStatus(msg, isErr=false) {
-        endpointStatusDiv.textContent = msg;
-        endpointStatusDiv.style.color = isErr ? '#b91c1c' : '#2d6a4f';
+    function status(msg, err=false) {
+        const div = document.getElementById('statusMessage');
+        div.textContent = msg;
+        err ? div.classList.add('error-msg') : div.classList.remove('error-msg');
     }
     
-    function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ""; }
-    function shuffleArray(arr) { for (let i=arr.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
-    
-    function buildBlurredTranslationHtml(text) {
-        if (!text) return "???";
-        return text.split(',').map(p => p.trim()).filter(p=>p).map(p => {
-            const first = p[0], rest = p.slice(1);
-            return `<span>${escapeHtml(first)}</span>${rest ? `<span class="blur-suffix">${escapeHtml(rest)}</span>` : ''}`;
-        }).join(', ');
-    }
-    
-    function loadLocalFavorites() {
+    function loadLocalFavs() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
             try {
-                const favMap = JSON.parse(stored);
-                for (let [row, val] of Object.entries(favMap)) if (val) currentFavorites.set(parseInt(row), 1);
+                const obj = JSON.parse(stored);
+                for (let [k,v] of Object.entries(obj)) if (v) favs.set(parseInt(k),1);
             } catch(e) {}
         }
     }
-    function saveLocalFavorites() { const obj={}; for (let [k,v] of currentFavorites.entries()) obj[k]=v; localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
-    function updateLocalFavorite(rowIndex, isFav) {
-        for (let item of wordsMetadata) if (item.rowIndex === rowIndex) item.favoriet = isFav?1:0;
-        for (let [_, words] of themeMap.entries()) for (let w of words) if (w.rowIndex === rowIndex) w.favoriet = isFav?1:0;
-        if (isFav) currentFavorites.set(rowIndex,1); else currentFavorites.delete(rowIndex);
-        saveLocalFavorites();
+    function saveLocalFavs() { const obj={}; for (let [k,v] of favs) obj[k]=v; localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+    function updateLocal(row, isFav) {
+        for (let w of wordsMeta) if (w.row === row) w.fav = isFav ? 1 : 0;
+        for (let [_, list] of themeMap) for (let w of list) if (w.row === row) w.fav = isFav ? 1 : 0;
+        isFav ? favs.set(row,1) : favs.delete(row);
+        saveLocalFavs();
     }
     
-    async function setFavorite(rowIndex, isFavorite) {
-        const url = APPS_SCRIPT_URL;
-        if (!url) { updateLocalFavorite(rowIndex, isFavorite); renderCurrentTheme(); setStatus(`⭐ Lokaal ${isFavorite?'+':'-'}`, false); return; }
+    async function setFavorite(row, isFav) {
+        if (!APPS_SCRIPT_URL) { updateLocal(row, isFav); render(); status(`⭐ Lokaal ${isFav?'+':'-'}`, false); return; }
         try {
-            const res = await fetch(url, {
+            const res = await fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rowIndex, favorite: isFavorite ? 1 : 0 })
+                body: JSON.stringify({ rowIndex: row, favorite: isFav ? 1 : 0 })
             });
-            const text = await res.text();
+            const txt = await res.text();
             let json;
-            try { json = JSON.parse(text); } catch(e) { throw new Error(`Geen JSON: ${text.substring(0,100)}`); }
-            if (json.success === true) {
-                updateLocalFavorite(rowIndex, isFavorite);
-                renderCurrentTheme();
-                setStatus(`⭐ ${isFavorite?'Toegevoegd':'Verwijderd'} in sheet!`, false);
-            } else {
-                throw new Error(json.error || "Onbekend antwoord");
-            }
-        } catch (err) {
-            console.error(err);
-            setStatus(`⚠️ ${err.message} → alleen lokaal`, true);
-            updateLocalFavorite(rowIndex, isFavorite);
-            renderCurrentTheme();
+            try { json = JSON.parse(txt); } catch(e) { throw new Error(txt.slice(0,100)); }
+            if (json.success) {
+                updateLocal(row, isFav);
+                render();
+                status(`⭐ ${isFav?'Toegevoegd':'Verwijderd'} in sheet`, false);
+            } else throw new Error(json.error || "Onbekend");
+        } catch(e) {
+            status(`⚠️ ${e.message} → alleen lokaal`, true);
+            updateLocal(row, isFav);
+            render();
         }
     }
     
     async function testPost() {
-        const url = appsScriptUrlInput.value.trim();
-        if (!url) { setEndpointStatus("❌ Geen URL", true); return; }
-        setEndpointStatus("📤 Test POST met rij 2, favorite=1 ...", false);
+        const url = document.getElementById('appsScriptUrl').value.trim();
+        if (!url) { document.getElementById('testResult').innerText = "❌ Geen URL"; return; }
+        document.getElementById('testResult').innerText = "📤 Test POST rij 2...";
         try {
             const res = await fetch(url, {
                 method: 'POST',
@@ -147,114 +116,101 @@
             const text = await res.text();
             let json;
             try { json = JSON.parse(text); } catch(e) { json = text; }
-            setEndpointStatus(`📥 Antwoord: ${JSON.stringify(json).substring(0,200)}`, !json?.success);
-            if (json?.success) setEndpointStatus("✅ POST werkt! Favorieten worden nu opgeslagen.", false);
+            document.getElementById('testResult').innerHTML = `📥 Antwoord: <code>${JSON.stringify(json)}</code>`;
+            if (json.success) {
+                document.getElementById('testResult').style.color = "green";
+                APPS_SCRIPT_URL = url;
+                localStorage.setItem('appsScriptUrl', url);
+            } else {
+                document.getElementById('testResult').style.color = "red";
+            }
         } catch(e) {
-            setEndpointStatus(`❌ POST fout: ${e.message}`, true);
+            document.getElementById('testResult').innerHTML = `❌ Fout: ${e.message}`;
+            document.getElementById('testResult').style.color = "red";
         }
     }
     
-    function processSheetData(csvRows) {
-        let startIdx = 0;
-        if (csvRows.length && csvRows[0][0]?.toString().toLowerCase().includes("hoofdthema")) startIdx = 1;
-        const themaCol=1, woordCol=2, vertalingCol=3, favorietCol=5;
-        const tempMap = new Map();
-        const tempMetadata = [];
-        for (let i=startIdx; i<csvRows.length; i++) {
-            const row = csvRows[i];
-            if (!row || row.length<4) continue;
-            const thema = row[themaCol]?.toString().trim() || "";
-            const woord = row[woordCol]?.toString().trim() || "";
-            const vertaling = row[vertalingCol]?.toString().trim() || "";
-            const favoriet = (row[favorietCol]?.toString().trim() === "1") ? 1 : 0;
-            if (!thema || !woord) continue;
-            const sheetRow = i+1; // 1-based (rij 1 = header)
-            if (!tempMap.has(thema)) tempMap.set(thema, []);
-            tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex: sheetRow });
-            tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex: sheetRow });
-        }
-        if (tempMap.size === 0) throw new Error("Geen thema's gevonden");
-        themeMap = tempMap;
-        wordsMetadata = tempMetadata;
-        uniqueThemes = Array.from(themeMap.keys());
-        shuffledThemes = shuffleArray([...uniqueThemes]);
-        currentIndex = 0;
-        currentFavorites.clear();
-        for (let item of wordsMetadata) if (item.favoriet === 1) currentFavorites.set(item.rowIndex, 1);
-        loadLocalFavorites();
-        return true;
-    }
-    
-    function renderCurrentTheme() {
-        if (!shuffledThemes.length || !themeMap.size) {
-            wordsGrid.innerHTML = `<div class="tile">Geen data</div><div class="tile">Laad sheet</div>`;
-            return;
-        }
-        const theme = shuffledThemes[currentIndex];
+    function render() {
+        if (!shuffled.length) return;
+        const theme = shuffled[idx];
         const words = themeMap.get(theme) || [];
-        themeCounterSpan.textContent = `${currentIndex+1}/${shuffledThemes.length}`;
-        currentThemeNameSpan.textContent = theme;
+        document.getElementById('currentTheme').innerText = theme;
+        document.getElementById('themeCounter').innerText = `${idx+1}/${shuffled.length}`;
         let html = "";
         for (let w of words) {
-            const isFav = (w.favoriet === 1);
+            const isFav = (w.fav === 1);
+            const vertHtml = w.vert.split(',').map(p=>p.trim()).filter(p=>p).map(p=>`<span>${p[0]}</span><span class="blur-suffix">${p.slice(1)}</span>`).join(', ');
             html += `
                 <div class="tile woord-tile">${escapeHtml(w.woord)}</div>
-                <div class="tile vertaling-tile" data-row="${w.rowIndex}">
-                    <button class="favorite-star ${isFav ? 'active' : ''}" data-row="${w.rowIndex}">${isFav ? '★' : '☆'}</button>
-                    <span class="translation-text">${buildBlurredTranslationHtml(w.vertaling)}</span>
+                <div class="tile vertaling-tile" data-row="${w.row}">
+                    <button class="favorite-star ${isFav?'active':''}" data-row="${w.row}">${isFav?'★':'☆'}</button>
+                    <span class="translation-text">${vertHtml}</span>
                 </div>
             `;
         }
-        wordsGrid.innerHTML = html;
-        document.querySelectorAll('.vertaling-tile').forEach(tile => {
-            const txtSpan = tile.querySelector('.translation-text');
-            tile.addEventListener('click', (e) => {
-                if (e.target.classList.contains('favorite-star')) return;
-                txtSpan.querySelectorAll('.blur-suffix').forEach(s => s.classList.remove('blur-suffix'));
-            });
+        document.getElementById('wordsGrid').innerHTML = html;
+        document.querySelectorAll('.vertaling-tile').forEach(t => {
+            const span = t.querySelector('.translation-text');
+            t.onclick = (e) => { if (!e.target.classList.contains('favorite-star')) span.querySelectorAll('.blur-suffix').forEach(s=>s.classList.remove('blur-suffix')); };
         });
         document.querySelectorAll('.favorite-star').forEach(star => {
-            star.addEventListener('click', async (e) => {
+            star.onclick = async (e) => {
                 e.stopPropagation();
                 const row = parseInt(star.dataset.row);
                 const newFav = !star.classList.contains('active');
                 star.classList.toggle('active', newFav);
-                star.textContent = newFav ? '★' : '☆';
+                star.innerText = newFav ? '★' : '☆';
                 await setFavorite(row, newFav);
-            });
+            };
         });
     }
     
+    function escapeHtml(s) { return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+    function shuffle(a) { for (let i=a.length-1;i>0;i--) { let j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    
     async function loadSheet() {
-        setStatus("🔄 Laden...", false);
+        status("🔄 Laden...");
         try {
-            const res = await fetch(SHEET_CSV_URL, { cache: "no-store" });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const res = await fetch(SHEET_CSV);
             const csv = await res.text();
             const parsed = Papa.parse(csv, { skipEmptyLines: true });
-            processSheetData(parsed.data);
-            setStatus(`✅ Geladen: ${uniqueThemes.length} thema's`, false);
-            renderCurrentTheme();
-        } catch(e) {
-            setStatus(`Fout: ${e.message}`, true);
-        }
+            let start = 0;
+            if (parsed.data[0][0]?.toLowerCase().includes("hoofdthema")) start = 1;
+            const tempMap = new Map();
+            const tempMeta = [];
+            for (let i=start; i<parsed.data.length; i++) {
+                const row = parsed.data[i];
+                if (!row || row.length<4) continue;
+                const thema = row[1]?.trim(), woord = row[2]?.trim(), vert = row[3]?.trim(), fav = row[5]?.trim() === "1" ? 1 : 0;
+                if (!thema || !woord) continue;
+                const sheetRow = i+1;
+                if (!tempMap.has(thema)) tempMap.set(thema, []);
+                tempMap.get(thema).push({ woord, vert, fav, row: sheetRow });
+                tempMeta.push({ thema, woord, vert, fav, row: sheetRow });
+            }
+            if (tempMap.size === 0) throw new Error("Geen thema's");
+            themeMap = tempMap;
+            wordsMeta = tempMeta;
+            themes = Array.from(themeMap.keys());
+            shuffled = shuffle([...themes]);
+            idx = 0;
+            favs.clear();
+            for (let w of wordsMeta) if (w.fav === 1) favs.set(w.row, 1);
+            loadLocalFavs();
+            render();
+            status(`✅ ${themes.length} thema's geladen`);
+        } catch(e) { status(`Fout: ${e.message}`, true); }
     }
     
-    function reshuffle() { if (uniqueThemes.length) { shuffledThemes = shuffleArray([...uniqueThemes]); currentIndex=0; renderCurrentTheme(); setStatus("Volgorde geschud", false); } }
-    function randomTheme() { if (shuffledThemes.length) { let i = Math.floor(Math.random()*shuffledThemes.length); if (i===currentIndex && shuffledThemes.length>1) i=(i+1)%shuffledThemes.length; currentIndex=i; renderCurrentTheme(); } }
-    function prevTheme() { if (shuffledThemes.length) { currentIndex = (currentIndex-1+shuffledThemes.length)%shuffledThemes.length; renderCurrentTheme(); } }
-    function nextTheme() { if (shuffledThemes.length) { currentIndex = (currentIndex+1)%shuffledThemes.length; renderCurrentTheme(); } }
-    
-    document.getElementById('prevBtn').onclick = prevTheme;
-    document.getElementById('nextBtn').onclick = nextTheme;
-    document.getElementById('randomThemeBtn').onclick = randomTheme;
-    document.getElementById('reshuffleThemesBtn').onclick = reshuffle;
+    document.getElementById('prevBtn').onclick = () => { if (shuffled.length) idx = (idx-1+shuffled.length)%shuffled.length; render(); };
+    document.getElementById('nextBtn').onclick = () => { if (shuffled.length) idx = (idx+1)%shuffled.length; render(); };
+    document.getElementById('randomBtn').onclick = () => { if (shuffled.length) { let i = Math.floor(Math.random()*shuffled.length); if (i===idx && shuffled.length>1) i=(i+1)%shuffled.length; idx=i; render(); } };
+    document.getElementById('reshuffleBtn').onclick = () => { if (themes.length) { shuffled = shuffle([...themes]); idx=0; render(); status("Volgorde geschud"); } };
     document.getElementById('testPostBtn').onclick = testPost;
-    appsScriptUrlInput.onchange = () => { APPS_SCRIPT_URL = appsScriptUrlInput.value.trim(); localStorage.setItem('appsScriptUrl', APPS_SCRIPT_URL); setStatus("URL bijgewerkt", false); };
     
-    // Laad opgeslagen URL
-    if (localStorage.getItem('appsScriptUrl')) APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl');
-    appsScriptUrlInput.value = APPS_SCRIPT_URL;
+    const savedUrl = localStorage.getItem('appsScriptUrl');
+    if (savedUrl) document.getElementById('appsScriptUrl').value = savedUrl;
+    APPS_SCRIPT_URL = savedUrl || "";
     
     loadSheet();
 </script>
