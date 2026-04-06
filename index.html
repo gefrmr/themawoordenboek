@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · thematische oefeningen</title>
-    <!-- PapaParse voor robuuste CSV parsing -->
+    <title>Woordentrainer · thematische oefeningen · blur & klik</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         * {
@@ -25,16 +24,13 @@
             margin: 0 auto;
         }
 
-        /* kaart / tegels styling */
         .card {
             background: white;
             border-radius: 28px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.02);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
             overflow: hidden;
-            transition: all 0.1s ease;
         }
 
-        /* config sectie */
         .config-panel {
             background: white;
             border-radius: 28px;
@@ -49,9 +45,6 @@
             font-size: 0.9rem;
             margin-bottom: 10px;
             color: #1e293b;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .url-input-group {
@@ -81,7 +74,6 @@
             color: white;
             cursor: pointer;
             transition: 0.2s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             touch-action: manipulation;
         }
 
@@ -93,7 +85,6 @@
             background: transparent;
             border: 1px solid #cbd5e1;
             color: #1e293b;
-            box-shadow: none;
         }
 
         .btn-primary {
@@ -107,11 +98,11 @@
         .status-msg {
             font-size: 0.75rem;
             margin-top: 8px;
-            color: #2d6a4f;
-            background: #e9f5ef;
             padding: 8px 12px;
             border-radius: 40px;
             display: inline-block;
+            background: #e9f5ef;
+            color: #2d6a4f;
         }
 
         .error-msg {
@@ -119,7 +110,6 @@
             color: #b91c1c;
         }
 
-        /* thema header */
         .theme-header {
             display: flex;
             justify-content: space-between;
@@ -146,7 +136,6 @@
             font-weight: 500;
         }
 
-        /* tabel/tiles grid */
         .woorden-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -163,13 +152,13 @@
             font-weight: 500;
             word-break: break-word;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s;
             border: 1px solid #eef2ff;
             min-height: 85px;
             display: flex;
             align-items: center;
             justify-content: center;
             line-height: 1.4;
+            transition: all 0.1s;
         }
 
         .woord-tile {
@@ -179,13 +168,21 @@
 
         .vertaling-tile {
             background: #f8fafc;
-            font-family: monospace;
-            letter-spacing: 0.3px;
-            color: #1e293b;
             border-left: 6px solid #3b82f6;
+            cursor: pointer;
+            transition: filter 0.2s ease;
         }
 
-        /* knop balk */
+        /* 🔥 Blur-effect (geen puntjes meer) */
+        .blurred {
+            filter: blur(5px);
+        }
+
+        /* Bij klik wordt de blur verwijderd (ontblurd) */
+        .vertaling-tile.clear {
+            filter: none;
+        }
+
         .nav-buttons {
             display: flex;
             justify-content: space-between;
@@ -217,11 +214,6 @@
             color: #62748c;
         }
 
-        hr {
-            margin: 16px 0;
-            border-color: #e2e8f0;
-        }
-
         @media (max-width: 480px) {
             body {
                 padding: 16px 12px 32px;
@@ -238,9 +230,8 @@
 </head>
 <body>
 <div class="container">
-    <!-- Configuratieblok: koppeling aan Google Sheet -->
     <div class="config-panel">
-        <div class="config-title">📄 Koppel aan Google Sheet</div>
+        <div class="config-title">📄 Koppel aan Google Sheet (CSV)</div>
         <div class="url-input-group">
             <input type="text" id="sheetUrlInput" class="url-input" placeholder="Plak de CSV-export-URL van je Google Sheet" 
                    value="https://docs.google.com/spreadsheets/d/e/2PACX-1vT9KzZxR5c9hQ2Lm8jF3gW6yH7uJkLpO9iUyT6rE5wQ4aZ3xCfVbNnM_/pub?output=csv">
@@ -250,51 +241,46 @@
             <button id="useSampleBtn" class="btn btn-secondary">📋 Voorbeelddata laden</button>
             <button id="reshuffleThemesBtn" class="btn-outline btn" style="background:white;">🔄 Nieuwe thema-volgorde</button>
         </div>
-        <div id="statusMessage" class="status-msg">⚠️ Vul je eigen Google Sheet CSV-URL in of gebruik voorbeelddata</div>
+        <div id="statusMessage" class="status-msg">⚠️ Plak je eigen CSV-URL of gebruik voorbeelddata</div>
         <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
-            📌 Vereiste kolommen: <strong>hoofdthema, thema, woord, vertaling, woordtype</strong> (of minstens thema, woord, vertaling).<br>
-            🔗 Publicatie: Bestand → Delen → Publiceren op web → als CSV (komma gescheiden).
+            📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
+            🔗 Publiceren via Bestand → Delen → Publiceren op web → als CSV.<br>
+            ✨ Tip: tik op een geblurde vertaling → wordt helder!
         </div>
     </div>
 
-    <!-- Hoofd oefenblok -->
     <div class="card" style="padding: 20px 18px;">
         <div class="theme-header">
             <span class="thema-badge" id="currentThemeName">✨ Laad een thema</span>
             <span class="counter" id="themeCounter">0 / 0</span>
         </div>
 
-        <!-- Woorden & vertalingen als tegels (2 kolommen) -->
         <div id="wordsGrid" class="woorden-grid">
-            <!-- dynamisch gevuld met JS -->
             <div class="tile">⬅️ Laad data</div>
             <div class="tile">➡️ Klik op laden</div>
         </div>
 
-        <!-- Navigatie vorige / volgende oefening -->
         <div class="nav-buttons">
             <button id="prevBtn" class="btn nav-btn">◀ Vorig thema</button>
             <button id="nextBtn" class="btn nav-btn">Volgend thema ▶</button>
         </div>
         <button id="randomThemeBtn" class="btn shuffle-btn">🎲 Willekeurig ander thema</button>
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
-            Elke oefening toont alle woorden van 1 thema. Vertalingen zijn <strong>geblurd</strong> (alleen eerste letter(s) zichtbaar).
+            🔍 Vertalingen beginnen met een <strong>blur</strong>. Tik erop om het antwoord te zien.
         </p>
     </div>
-    <footer>
-        📖 Woordentrainer · gekoppeld aan Google Sheets · gebaseerd op thema's
-    </footer>
+    <footer>📖 Woordentrainer · blur i.p.v. puntjes · klik om te ontbluren</footer>
 </div>
 
 <script>
     // ---------- Globale variabelen ----------
-    let rawSheetData = [];          // alle rijen uit CSV (objecten)
-    let themeMap = new Map();       // key = thema (string) , value = array van {woord, vertaling}
-    let uniqueThemes = [];          // lijst van alle thema's (strings)
-    let shuffledThemes = [];        // random volgorde voor oefeningen
-    let currentIndex = 0;           // index in shuffledThemes
-    
-    // UI elementen
+    let rawSheetData = [];
+    let themeMap = new Map();       // thema -> [{woord, vertaling}]
+    let uniqueThemes = [];
+    let shuffledThemes = [];
+    let currentIndex = 0;
+
+    // DOM elementen
     const wordsGrid = document.getElementById('wordsGrid');
     const currentThemeNameSpan = document.getElementById('currentThemeName');
     const themeCounterSpan = document.getElementById('themeCounter');
@@ -306,8 +292,7 @@
     const reshuffleThemesBtn = document.getElementById('reshuffleThemesBtn');
     const sheetUrlInput = document.getElementById('sheetUrlInput');
     const statusMsgDiv = document.getElementById('statusMessage');
-    
-    // Helper: status update (succes / error)
+
     function setStatus(message, isError = false) {
         statusMsgDiv.textContent = message;
         if (isError) {
@@ -316,76 +301,8 @@
             statusMsgDiv.classList.remove('error-msg');
         }
     }
-    
-    // ----- Maskering van vertaling (geblurd, eerste letter(s) zichtbaar) -----
-    // Vertaling kan meerdere woorden bevatten gescheiden door komma's
-    // Voorbeeld: "hond, kat" => "h•••, k••"  ,  "auto" => "a•••"
-    function maskTranslation(translationText) {
-        if (!translationText || translationText.trim() === "") return "???";
-        // Splits op komma's (met eventuele spaties)
-        let parts = translationText.split(',').map(part => part.trim());
-        let maskedParts = parts.map(part => {
-            if (part.length === 0) return "";
-            // Eerste karakter behouden, alle overige karakters vervangen door '•'
-            const firstChar = part[0];
-            const restLength = part.length - 1;
-            const maskedRest = '•'.repeat(restLength);
-            return firstChar + maskedRest;
-        });
-        return maskedParts.join(', ');
-    }
-    
-    // ----- Verwerk CSV data naar thema's & woorden (verwacht kolommen: 0=hoofdthema,1=thema,2=woord,3=vertaling,4=woordtype)
-    function processSheetData(csvRows) {
-        // Verwacht dat de eerste rij eventueel headers bevat. We kijken naar kolomnamen of gebruiken indices.
-        // Robuust: we gebruiken de eerste rij als header als die lijkt op tekstuele namen. Anders nemen we gewoon indices.
-        let startIdx = 0;
-        let headers = [];
-        if (csvRows.length > 0) {
-            const firstRow = csvRows[0];
-            // Als eerste rij iets bevat als "hoofdthema", "thema", "woord", dan header overslaan
-            const possibleHeader = firstRow[0]?.toString().toLowerCase() || "";
-            if (possibleHeader.includes("hoofdthema") || possibleHeader === "hoofdthema" || firstRow[1]?.toString().toLowerCase().includes("thema")) {
-                headers = firstRow;
-                startIdx = 1;
-            }
-        }
-        
-        const themaColIdx = 1;      // kolom B -> thema
-        const woordColIdx = 2;      // kolom C -> woord
-        const vertalingColIdx = 3;   // kolom D -> vertaling
-        
-        const tempMap = new Map();    // thema -> array van {woord, vertaling}
-        
-        for (let i = startIdx; i < csvRows.length; i++) {
-            const row = csvRows[i];
-            if (!row || row.length < 4) continue; // minimaal 4 kolommen nodig
-            const thema = row[themaColIdx] ? row[themaColIdx].toString().trim() : "";
-            const woord = row[woordColIdx] ? row[woordColIdx].toString().trim() : "";
-            const vertaling = row[vertalingColIdx] ? row[vertalingColIdx].toString().trim() : "";
-            
-            if (thema === "" || woord === "") continue;   // thema en woord zijn essentieel
-            
-            if (!tempMap.has(thema)) {
-                tempMap.set(thema, []);
-            }
-            tempMap.get(thema).push({ woord: woord, vertaling: vertaling });
-        }
-        
-        if (tempMap.size === 0) {
-            throw new Error("Geen geldige thema's gevonden. Controleer kolommen (thema, woord, vertaling).");
-        }
-        
-        themeMap = tempMap;
-        uniqueThemes = Array.from(themeMap.keys());
-        // shuffle thema's voor willekeurige startvolgorde
-        shuffledThemes = shuffleArray([...uniqueThemes]);
-        currentIndex = 0;
-        
-        return true;
-    }
-    
-    // Fisher-Yates shuffle
+
+    // Hulp: array shufflen
     function shuffleArray(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -393,82 +310,77 @@
         }
         return arr;
     }
-    
-    // nieuwe willekeurige volgorde van thema's (reset huidige positie naar 0)
+
+    // Verwerk CSV naar thema's (verwacht kolommen: thema=index1, woord=2, vertaling=3)
+    function processSheetData(csvRows) {
+        let startIdx = 0;
+        if (csvRows.length > 0) {
+            const firstRow = csvRows[0];
+            const possibleHeader = firstRow[0]?.toString().toLowerCase() || "";
+            if (possibleHeader.includes("hoofdthema") || possibleHeader === "hoofdthema" || firstRow[1]?.toString().toLowerCase().includes("thema")) {
+                startIdx = 1;
+            }
+        }
+        const themaColIdx = 1;
+        const woordColIdx = 2;
+        const vertalingColIdx = 3;
+        const tempMap = new Map();
+
+        for (let i = startIdx; i < csvRows.length; i++) {
+            const row = csvRows[i];
+            if (!row || row.length < 4) continue;
+            const thema = row[themaColIdx] ? row[themaColIdx].toString().trim() : "";
+            const woord = row[woordColIdx] ? row[woordColIdx].toString().trim() : "";
+            const vertaling = row[vertalingColIdx] ? row[vertalingColIdx].toString().trim() : "";
+            if (thema === "" || woord === "") continue;
+            if (!tempMap.has(thema)) tempMap.set(thema, []);
+            tempMap.get(thema).push({ woord, vertaling });
+        }
+        if (tempMap.size === 0) throw new Error("Geen geldige thema's gevonden.");
+        themeMap = tempMap;
+        uniqueThemes = Array.from(themeMap.keys());
+        shuffledThemes = shuffleArray([...uniqueThemes]);
+        currentIndex = 0;
+        return true;
+    }
+
+    // Nieuwe willekeurige volgorde (shuffle thema's)
     function reshuffleThemeOrder() {
         if (uniqueThemes.length === 0) {
-            setStatus("Geen data geladen. Laad eerst een Google Sheet.", true);
+            setStatus("Geen data geladen. Laad eerst een sheet.", true);
             return false;
         }
         shuffledThemes = shuffleArray([...uniqueThemes]);
         currentIndex = 0;
         renderCurrentTheme();
-        setStatus(`✅ Nieuwe willekeurige thema-volgorde (${shuffledThemes.length} thema's)`, false);
+        setStatus(`✅ Nieuwe thema-volgorde (${shuffledThemes.length} thema's)`, false);
         return true;
     }
-    
-    // Spring naar een willekeurig thema (uit shuffled lijst, eventueel andere index)
+
     function jumpToRandomTheme() {
-        if (!shuffledThemes.length) {
-            setStatus("Geen thema's beschikbaar", true);
-            return;
-        }
+        if (!shuffledThemes.length) return;
         let newIndex = Math.floor(Math.random() * shuffledThemes.length);
         if (shuffledThemes.length > 1 && newIndex === currentIndex) {
             newIndex = (newIndex + 1) % shuffledThemes.length;
         }
         currentIndex = newIndex;
         renderCurrentTheme();
-        setStatus(`🎲 Nieuw thema: ${shuffledThemes[currentIndex]}`, false);
+        setStatus(`🎲 Willekeurig thema: ${shuffledThemes[currentIndex]}`, false);
     }
-    
-    // Vorige oefening (thema)
+
     function prevTheme() {
         if (!shuffledThemes.length) return;
         currentIndex = (currentIndex - 1 + shuffledThemes.length) % shuffledThemes.length;
         renderCurrentTheme();
     }
-    
-    // Volgende oefening (thema)
+
     function nextTheme() {
         if (!shuffledThemes.length) return;
         currentIndex = (currentIndex + 1) % shuffledThemes.length;
         renderCurrentTheme();
     }
-    
-    // Render de tegels: woorden en geblurde vertalingen voor het huidige thema
-    function renderCurrentTheme() {
-        if (!shuffledThemes.length || !themeMap.size) {
-            wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Laad een sheet of gebruik voorbeeld</div>`;
-            currentThemeNameSpan.textContent = "❓ Geen thema";
-            themeCounterSpan.textContent = `0 / 0`;
-            return;
-        }
-        
-        const currentTheme = shuffledThemes[currentIndex];
-        const wordsList = themeMap.get(currentTheme) || [];
-        const totalThemes = shuffledThemes.length;
-        themeCounterSpan.textContent = `${currentIndex+1} / ${totalThemes}`;
-        currentThemeNameSpan.textContent = currentTheme;
-        
-        if (!wordsList.length) {
-            wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">voor dit thema</div>`;
-            return;
-        }
-        
-        // Bouw grid met 2 kolommen (woord | vertaling)
-        let gridHtml = "";
-        for (let item of wordsList) {
-            const masked = maskTranslation(item.vertaling);
-            gridHtml += `
-                <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
-                <div class="tile vertaling-tile">${escapeHtml(masked)}</div>
-            `;
-        }
-        wordsGrid.innerHTML = gridHtml;
-    }
-    
-    // kleine XSS bescherming
+
+    // Tekst ontsmetten (XSS)
     function escapeHtml(str) {
         if (!str) return "";
         return str.replace(/[&<>]/g, function(m) {
@@ -476,55 +388,82 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
-    
-    // ----- Data laden vanuit Google Sheets CSV (publicatie URL) -----
+
+    // RENDEREN met blur ipv puntjes + klik om te ontbluren
+    function renderCurrentTheme() {
+        if (!shuffledThemes.length || !themeMap.size) {
+            wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Laad een sheet of gebruik voorbeeld</div>`;
+            currentThemeNameSpan.textContent = "❓ Geen thema";
+            themeCounterSpan.textContent = `0 / 0`;
+            return;
+        }
+
+        const currentTheme = shuffledThemes[currentIndex];
+        const wordsList = themeMap.get(currentTheme) || [];
+        const totalThemes = shuffledThemes.length;
+        themeCounterSpan.textContent = `${currentIndex+1} / ${totalThemes}`;
+        currentThemeNameSpan.textContent = currentTheme;
+
+        if (!wordsList.length) {
+            wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">voor dit thema</div>`;
+            return;
+        }
+
+        // Bouw grid met 2 kolommen: woord (links) en vertaling (rechts mét blur)
+        let gridHtml = "";
+        for (let item of wordsList) {
+            const vertalingOrig = escapeHtml(item.vertaling);
+            gridHtml += `
+                <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
+                <div class="tile vertaling-tile blurred" data-original="${vertalingOrig}">${vertalingOrig}</div>
+            `;
+        }
+        wordsGrid.innerHTML = gridHtml;
+
+        // Voeg klik-listeners toe aan alle vertaling-tegels (ontblurren)
+        const vertalingTiles = document.querySelectorAll('.vertaling-tile');
+        vertalingTiles.forEach(tile => {
+            tile.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Verwijder de 'blurred' klasse → woord wordt helder
+                this.classList.remove('blurred');
+                // Optioneel: toevoegen van een 'clear' klasse voor styling
+                this.classList.add('clear');
+            });
+        });
+    }
+
+    // Data laden vanuit Google Sheets CSV
     async function loadFromGoogleSheetUrl(url) {
         if (!url || url.trim() === "") {
-            setStatus("Voer een geldige CSV-URL in (pub?output=csv)", true);
+            setStatus("Voer een geldige CSV-URL in", true);
             return false;
         }
-        setStatus("🔄 Bezig met laden van Google Sheet data...", false);
+        setStatus("🔄 Bezig met laden...", false);
         try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: { 'Cache-Control': 'no-cache' }
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}: kon sheet niet laden`);
+            const response = await fetch(url, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const csvText = await response.text();
-            if (!csvText.trim()) throw new Error("Leeg CSV-bestand");
-            
-            // Parse CSV met PapaParse (ondersteunt komma's en aanhalingstekens)
-            const parsed = Papa.parse(csvText, {
-                skipEmptyLines: true,
-                trimHeaders: false
-            });
-            if (parsed.errors && parsed.errors.length) {
-                console.warn("CSV parse warnings:", parsed.errors);
-            }
+            if (!csvText.trim()) throw new Error("Leeg bestand");
+            const parsed = Papa.parse(csvText, { skipEmptyLines: true });
+            if (parsed.errors.length) console.warn(parsed.errors);
             const rows = parsed.data;
-            if (!rows || rows.length < 2) throw new Error("CSV bevat onvoldoende rijen (minimaal 2)");
-            
-            // Verwerk de rijen naar thema-structuur
+            if (!rows || rows.length < 2) throw new Error("CSV heeft te weinig rijen");
             processSheetData(rows);
-            
-            if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden in sheet. Controleer kolom B (thema)");
-            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's, ${themeMap.size} uniek. Start oefening.`, false);
+            if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden");
+            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Tik op vertalingen om te ontbluren.`, false);
             renderCurrentTheme();
             return true;
         } catch (err) {
-            console.error(err);
-            setStatus(`Fout: ${err.message}. Controleer of de CSV-URL correct is en openbaar.`, true);
+            setStatus(`Fout: ${err.message}`, true);
             return false;
         }
     }
-    
-    // ----- VOORBEELDDATA (ingebouwd om te demonstreren zonder sheet) -----
+
+    // Voorbeelddata (geen puntjes, gewone tekst, blur wordt toegepast)
     function loadSampleData() {
-        // Voorbeelddata volgens de 5 kolommen: hoofdthema, thema, woord, vertaling, woordtype
         const sampleRows = [
             ["Dieren", "Boerderij", "koe", "cow", "zelfstandig"],
             ["Dieren", "Boerderij", "varken", "pig", "zelfstandig"],
@@ -543,48 +482,39 @@
             ["Bijvoeglijk", "Adjectieven", "mooi", "beautiful, nice", "bijvoeglijk"]
         ];
         try {
-            // simuleren alsof dit CSV-data is
             processSheetData(sampleRows);
-            if (uniqueThemes.length === 0) throw new Error("Geen thema's in voorbeelddata");
-            setStatus(`📚 Voorbeelddata geladen — ${uniqueThemes.length} thema's. Veel plezier!`, false);
+            setStatus(`📚 Voorbeelddata geladen — ${uniqueThemes.length} thema's. Tik op een vertaling om te ontbluren.`, false);
             renderCurrentTheme();
         } catch (err) {
-            setStatus(`Fout met voorbeelddata: ${err.message}`, true);
+            setStatus(`Fout in voorbeelddata: ${err.message}`, true);
         }
     }
-    
-    // ----- Initialisatie + event listeners -----
+
+    // Event listeners
     function initEventListeners() {
         prevBtn.addEventListener('click', prevTheme);
         nextBtn.addEventListener('click', nextTheme);
         randomThemeBtn.addEventListener('click', jumpToRandomTheme);
         reshuffleThemesBtn.addEventListener('click', () => {
             if (uniqueThemes.length > 0) reshuffleThemeOrder();
-            else setStatus("Laad eerst een Google Sheet of gebruik voorbeelddata", true);
+            else setStatus("Laad eerst een sheet", true);
         });
         loadSheetBtn.addEventListener('click', async () => {
-            let rawUrl = sheetUrlInput.value.trim();
-            if (!rawUrl) {
-                setStatus("Plak eerst de CSV-export URL van je Google Sheet", true);
-                return;
-            }
-            await loadFromGoogleSheetUrl(rawUrl);
+            const url = sheetUrlInput.value.trim();
+            if (!url) setStatus("Plak een CSV-URL", true);
+            else await loadFromGoogleSheetUrl(url);
         });
-        useSampleBtn.addEventListener('click', () => {
-            loadSampleData();
-        });
+        useSampleBtn.addEventListener('click', loadSampleData);
     }
-    
-    // Laad indien gewenst een demo-status (geen automatische sheet, maar toon instructie)
+
     function bootstrap() {
         initEventListeners();
-        setStatus("📌 Vul je Google Sheet CSV-link in of klik 'Voorbeelddata laden'", false);
-        // lege placeholder weergeven
+        setStatus("📌 Plak je Google Sheet CSV-link of gebruik 'Voorbeelddata laden'", false);
         wordsGrid.innerHTML = `<div class="tile">📖 Wacht op data</div><div class="tile">🔗 Koppel een sheet</div>`;
         currentThemeNameSpan.textContent = "✨ Kies bron";
         themeCounterSpan.textContent = "0 / 0";
     }
-    
+
     bootstrap();
 </script>
 </body>
