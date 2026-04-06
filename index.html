@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · thema's · met favorieten (lokaal + online)</title>
+    <title>Woordentrainer · met favorieten (lokaal + online)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         * {
@@ -11,19 +11,16 @@
             margin: 0;
             padding: 0;
         }
-
         body {
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             background: #f1f5f9;
             padding: 20px 16px 40px;
             color: #0f172a;
         }
-
         .container {
             max-width: 700px;
             margin: 0 auto;
         }
-
         .config-panel {
             background: white;
             border-radius: 28px;
@@ -32,7 +29,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.03);
             border: 1px solid #e2e8f0;
         }
-
         .status-msg {
             font-size: 0.75rem;
             margin-top: 8px;
@@ -42,12 +38,10 @@
             background: #e9f5ef;
             color: #2d6a4f;
         }
-
         .error-msg {
             background: #fee2e2;
             color: #b91c1c;
         }
-
         .theme-header {
             display: flex;
             justify-content: space-between;
@@ -56,7 +50,6 @@
             margin-bottom: 18px;
             padding: 0 4px;
         }
-
         .thema-badge {
             background: #e6f0fa;
             padding: 8px 20px;
@@ -65,7 +58,6 @@
             font-size: 1.2rem;
             color: #0c4e6e;
         }
-
         .counter {
             font-size: 0.8rem;
             background: #e2e8f0;
@@ -73,14 +65,12 @@
             border-radius: 40px;
             font-weight: 500;
         }
-
         .woorden-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 14px;
             margin: 20px 0 28px;
         }
-
         .tile {
             background: white;
             border-radius: 24px;
@@ -99,12 +89,10 @@
             transition: all 0.1s;
             position: relative;
         }
-
         .woord-tile {
             background: #fef9e3;
             border-left: 6px solid #f59e0b;
         }
-
         .vertaling-tile {
             background: #f8fafc;
             border-left: 6px solid #3b82f6;
@@ -115,7 +103,6 @@
             justify-content: flex-start;
             padding-left: 32px;
         }
-
         .favorite-star {
             position: absolute;
             left: 12px;
@@ -124,7 +111,6 @@
             font-size: 1.4rem;
             cursor: pointer;
             color: #9ca3af;
-            transition: color 0.1s;
             background: transparent;
             border: none;
             padding: 0;
@@ -135,19 +121,13 @@
             color: #fbbf24;
             text-shadow: 0 0 2px #d97706;
         }
-        .favorite-star:active {
-            transform: translateY(-50%) scale(0.9);
-        }
-
         .blur-suffix {
             filter: blur(4px);
             transition: filter 0.2s ease;
         }
-
         .clear-suffix {
             filter: none;
         }
-
         .nav-buttons {
             display: flex;
             justify-content: space-between;
@@ -155,7 +135,6 @@
             margin-top: 8px;
             margin-bottom: 12px;
         }
-
         .nav-btn {
             flex: 1;
             background: #334155;
@@ -168,7 +147,6 @@
             border: none;
             cursor: pointer;
         }
-
         .shuffle-btn {
             background: #2c3e2f;
             margin-top: 12px;
@@ -180,7 +158,6 @@
             font-weight: 600;
             cursor: pointer;
         }
-
         .small-input {
             margin-top: 12px;
             display: flex;
@@ -205,14 +182,12 @@
             font-size: 0.7rem;
             cursor: pointer;
         }
-
         footer {
             font-size: 0.7rem;
             text-align: center;
             margin-top: 28px;
             color: #62748c;
         }
-
         @media (max-width: 480px) {
             body {
                 padding: 16px 12px 32px;
@@ -220,9 +195,6 @@
             .tile {
                 padding: 14px 8px;
                 font-size: 0.9rem;
-            }
-            .thema-badge {
-                font-size: 1rem;
             }
             .vertaling-tile {
                 padding-left: 28px;
@@ -244,9 +216,10 @@
             ⭐ Klik op de ster om favoriet te maken (lokaal + online indien verbinding).
         </div>
         <div class="small-input">
-            <input type="text" id="appsScriptUrlInput" placeholder="URL van Google Apps Script (optioneel)" value="https://script.google.com/macros/s/AKfycbwHHcIi9H5xoYzLRmizYIrwZnwzi3FvxVYu1oUoYxpPgKMEvVGZSdmkuqoaCH2_zF4D/exec">
-            <button id="testEndpointBtn">🔍 Test</button>
+            <input type="text" id="appsScriptUrlInput" placeholder="URL van Google Apps Script (verplicht voor online opslag)" value="https://script.google.com/macros/s/AKfycbwHHcIi9H5xoYzLRmizYIrwZnwzi3FvxVYu1oUoYxpPgKMEvVGZSdmkuqoaCH2_zF4D/exec">
+            <button id="testEndpointBtn">🔍 Test endpoint</button>
         </div>
+        <div id="endpointStatus" style="font-size:0.7rem; margin-top:5px;"></div>
     </div>
 
     <div class="card" style="padding: 20px 18px; background: white; border-radius: 28px;">
@@ -254,12 +227,10 @@
             <span class="thema-badge" id="currentThemeName">✨ Laad een thema</span>
             <span class="counter" id="themeCounter">0 / 0</span>
         </div>
-
         <div id="wordsGrid" class="woorden-grid">
             <div class="tile">📖 Even geduld</div>
             <div class="tile">🔄 Data wordt geladen</div>
         </div>
-
         <div class="nav-buttons">
             <button id="prevBtn" class="nav-btn">◀ Vorig thema</button>
             <button id="nextBtn" class="nav-btn">Volgend thema ▶</button>
@@ -275,21 +246,24 @@
 </div>
 
 <script>
-    // ==================== HARDCODED URLS ====================
+    // ==================== VASTE SHEET URL ====================
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv";
-    let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHHcIi9H5xoYzLRmizYIrwZnwzi3FvxVYu1oUoYxpPgKMEvVGZSdmkuqoaCH2_zF4D/exec";
-    // ========================================================
-
+    let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwkAvzTdQJJNb5pQuBJIwdJA1c0A4kY0HLojuejBzzWHZqqVEtAs5KtYMIwYAXzy1ru/exec";
+    
+    // Laad opgeslagen URL uit localStorage
+    if (localStorage.getItem('appsScriptUrl')) {
+        APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl');
+    }
+    
     let themeMap = new Map();
     let wordsMetadata = [];
     let uniqueThemes = [];
     let shuffledThemes = [];
     let currentIndex = 0;
     let currentFavorites = new Map();
-
-    // localStorage sleutel voor favorieten (backup)
     const STORAGE_KEY = 'woordtrainer_favorites';
 
+    // DOM elementen
     const wordsGrid = document.getElementById('wordsGrid');
     const currentThemeNameSpan = document.getElementById('currentThemeName');
     const themeCounterSpan = document.getElementById('themeCounter');
@@ -300,14 +274,9 @@
     const statusMsgDiv = document.getElementById('statusMessage');
     const appsScriptUrlInput = document.getElementById('appsScriptUrlInput');
     const testEndpointBtn = document.getElementById('testEndpointBtn');
+    const endpointStatusDiv = document.getElementById('endpointStatus');
 
-    // Laad opgeslagen URL uit localStorage
-    if (localStorage.getItem('appsScriptUrl')) {
-        APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl');
-        appsScriptUrlInput.value = APPS_SCRIPT_URL;
-    } else {
-        appsScriptUrlInput.value = APPS_SCRIPT_URL;
-    }
+    appsScriptUrlInput.value = APPS_SCRIPT_URL;
 
     function setStatus(message, isError = false) {
         statusMsgDiv.textContent = message;
@@ -316,6 +285,11 @@
         } else {
             statusMsgDiv.classList.remove('error-msg');
         }
+    }
+
+    function setEndpointStatus(message, isError = false) {
+        endpointStatusDiv.textContent = message;
+        endpointStatusDiv.style.color = isError ? '#b91c1c' : '#2d6a4f';
     }
 
     function shuffleArray(arr) {
@@ -341,10 +315,7 @@
         let parts = translationText.split(',').map(part => part.trim());
         let resultParts = [];
         for (let part of parts) {
-            if (part.length === 0) {
-                resultParts.push("");
-                continue;
-            }
+            if (part.length === 0) continue;
             const firstChar = part[0];
             const rest = part.substring(1);
             let escapedFirst = escapeHtml(firstChar);
@@ -358,7 +329,7 @@
         return resultParts.join(', ');
     }
 
-    // Laad favorieten uit localStorage en pas metadata aan
+    // Lokale favorieten
     function loadLocalFavorites() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return;
@@ -368,7 +339,6 @@
                 const rowIndex = parseInt(rowIndexStr);
                 if (isFav) {
                     currentFavorites.set(rowIndex, 1);
-                    // Update metadata
                     for (let item of wordsMetadata) {
                         if (item.rowIndex === rowIndex) item.favoriet = 1;
                     }
@@ -413,7 +383,6 @@
     async function setFavorite(rowIndex, isFavorite) {
         const url = APPS_SCRIPT_URL;
         if (!url || url.trim() === "") {
-            // Geen endpoint: alleen lokaal
             updateLocalFavorite(rowIndex, isFavorite);
             renderCurrentTheme();
             setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'} (alleen lokaal)`, false);
@@ -422,6 +391,7 @@
         try {
             const response = await fetch(url, {
                 method: 'POST',
+                mode: 'cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rowIndex: rowIndex, favorite: isFavorite ? 1 : 0 })
             });
@@ -432,12 +402,11 @@
                 renderCurrentTheme();
                 setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'} (opgeslagen in sheet)`, false);
             } else {
-                throw new Error(result.error || "Onbekende fout van endpoint");
+                throw new Error(result.error || "Onbekende fout");
             }
         } catch (err) {
             console.error("Fout bij favoriet:", err);
             setStatus(`⚠️ Kan niet opslaan in sheet: ${err.message}. Favoriet is alleen lokaal opgeslagen.`, true);
-            // Toch lokaal bijwerken, zodat de gebruiker niet alles kwijtraakt
             updateLocalFavorite(rowIndex, isFavorite);
             renderCurrentTheme();
         }
@@ -446,24 +415,38 @@
     async function testEndpoint() {
         const url = appsScriptUrlInput.value.trim();
         if (!url) {
-            setStatus("Geen URL ingevuld", true);
+            setEndpointStatus("❌ Geen URL ingevuld", true);
             return;
         }
-        setStatus("🔍 Testen van endpoint...", false);
+        setEndpointStatus("🔍 Bezig met testen...", false);
         try {
-            const response = await fetch(url, {
+            // Eerst een GET test (doGet moet bestaan in script)
+            const getResponse = await fetch(url, { method: 'GET', mode: 'cors' });
+            if (getResponse.ok) {
+                const data = await getResponse.json();
+                setEndpointStatus(`✅ Endpoint reageert! ${JSON.stringify(data)}`, false);
+                // Sla de werkende URL op
+                APPS_SCRIPT_URL = url;
+                localStorage.setItem('appsScriptUrl', url);
+                return;
+            }
+            // Als GET niet werkt, probeer een lichte POST
+            const postResponse = await fetch(url, {
                 method: 'POST',
+                mode: 'cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ test: true })
             });
-            if (response.ok) {
-                const data = await response.json();
-                setStatus(`✅ Endpoint reageert! Response: ${JSON.stringify(data)}`, false);
+            if (postResponse.ok) {
+                const data = await postResponse.json();
+                setEndpointStatus(`✅ Endpoint reageert op POST! ${JSON.stringify(data)}`, false);
+                APPS_SCRIPT_URL = url;
+                localStorage.setItem('appsScriptUrl', url);
             } else {
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error(`HTTP ${postResponse.status}`);
             }
         } catch (err) {
-            setStatus(`❌ Endpoint niet bereikbaar: ${err.message}`, true);
+            setEndpointStatus(`❌ Endpoint niet bereikbaar: ${err.message}. Controleer publicatie (uitvoeren als: ik, toegang: iedereen).`, true);
         }
     }
 
@@ -493,7 +476,7 @@
             let favoriet = (row[favorietColIdx] && row[favorietColIdx].toString().trim() === "1") ? 1 : 0;
             if (thema === "" || woord === "") continue;
 
-            const sheetRowNumber = i + 1; // 1-based (rij 1 = header, rij 2 = eerste data)
+            const sheetRowNumber = i + 1; // 1-based (rij 1 = header)
             if (!tempMap.has(thema)) tempMap.set(thema, []);
             tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex: sheetRowNumber });
             tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex: sheetRowNumber });
@@ -508,8 +491,7 @@
         wordsMetadata.forEach(item => {
             if (item.favoriet === 1) currentFavorites.set(item.rowIndex, 1);
         });
-        // Overrule met lokaal opgeslagen favorieten (die kunnen nieuwer zijn)
-        loadLocalFavorites();
+        loadLocalFavorites(); // overschrijf met lokaal opgeslagen (die kunnen nieuwer zijn)
         return true;
     }
 
@@ -548,7 +530,6 @@
         }
         wordsGrid.innerHTML = gridHtml;
 
-        // Ontblur bij klik op vertaling (niet op ster)
         document.querySelectorAll('.vertaling-tile').forEach(tile => {
             const textSpan = tile.querySelector('.translation-text');
             if (textSpan) {
@@ -563,14 +544,12 @@
             }
         });
 
-        // Ster klik
         document.querySelectorAll('.favorite-star').forEach(star => {
             star.addEventListener('click', async function(e) {
                 e.stopPropagation();
                 const rowIndex = parseInt(this.getAttribute('data-row-index'));
                 const currentlyFavorite = this.classList.contains('active');
                 const newFavorite = !currentlyFavorite;
-                // Optimistische update UI
                 if (newFavorite) {
                     this.classList.add('active');
                     this.textContent = '★';
@@ -635,23 +614,17 @@
         renderCurrentTheme();
     }
 
-    // Event listeners
     prevBtn.addEventListener('click', prevTheme);
     nextBtn.addEventListener('click', nextTheme);
     randomThemeBtn.addEventListener('click', jumpToRandomTheme);
     reshuffleThemesBtn.addEventListener('click', reshuffleThemeOrder);
-    testEndpointBtn.addEventListener('click', () => {
-        APPS_SCRIPT_URL = appsScriptUrlInput.value.trim();
-        localStorage.setItem('appsScriptUrl', APPS_SCRIPT_URL);
-        testEndpoint();
-    });
+    testEndpointBtn.addEventListener('click', testEndpoint);
     appsScriptUrlInput.addEventListener('change', () => {
         APPS_SCRIPT_URL = appsScriptUrlInput.value.trim();
         localStorage.setItem('appsScriptUrl', APPS_SCRIPT_URL);
         setStatus("📡 Endpoint URL bijgewerkt", false);
     });
 
-    // Start
     loadSheetData();
 </script>
 </body>
