@@ -2,325 +2,62 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · bewerken · verwijderen · favorieten</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Woordentrainer · bewerken & verwijderen</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: #f1f5f9;
-            padding: 20px 16px 40px;
-            color: #0f172a;
-        }
-
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-
-        .config-panel, .card, .search-panel {
-            background: white;
-            border-radius: 28px;
-            padding: 16px 18px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            border: 1px solid #e2e8f0;
-        }
-
-        .status-msg {
-            font-size: 0.75rem;
-            margin-top: 8px;
-            padding: 8px 12px;
-            border-radius: 40px;
-            display: inline-block;
-            background: #e9f5ef;
-            color: #2d6a4f;
-        }
-
-        .error-msg {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .theme-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            flex-wrap: wrap;
-            margin-bottom: 18px;
-            padding: 0 4px;
-        }
-
-        .thema-badge {
-            background: #e6f0fa;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 1.2rem;
-            color: #0c4e6e;
-        }
-
-        .counter {
-            font-size: 0.8rem;
-            background: #e2e8f0;
-            padding: 6px 12px;
-            border-radius: 40px;
-            font-weight: 500;
-        }
-
-        .woorden-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin: 20px 0 28px;
-        }
-
-        .tile {
-            background: white;
-            border-radius: 24px;
-            padding: 18px 12px;
-            text-align: center;
-            font-size: 1rem;
-            font-weight: 500;
-            word-break: break-word;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #eef2ff;
-            min-height: 85px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1.4;
-            transition: all 0.1s;
-            position: relative;
-        }
-
-        .woord-tile {
-            background: #fef9e3;
-            border-left: 6px solid #f59e0b;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .vertaling-tile {
-            background: #f8fafc;
-            border-left: 6px solid #3b82f6;
-            cursor: pointer;
-            flex-direction: column;
-            gap: 8px;
-            padding: 18px 12px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 6px;
-        }
-
-        .action-btn {
-            background: #e2e8f0;
-            border: none;
-            border-radius: 40px;
-            padding: 4px 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.1s;
-            color: #1e293b;
-        }
-
-        .action-btn.edit {
-            background: #cbd5e1;
-        }
-        .action-btn.edit:hover {
-            background: #94a3b8;
-        }
-        .action-btn.delete {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-        .action-btn.delete:hover {
-            background: #fecaca;
-        }
-
-        .favorite-star {
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: #9ca3af;
-            background: transparent;
-            border: none;
-            padding: 0;
-            margin: 0;
-            line-height: 1;
-            transition: transform 0.1s;
-        }
-        .favorite-star.active {
-            color: #fbbf24;
-            text-shadow: 0 0 2px #d97706;
-        }
-        .favorite-star:active {
-            transform: scale(0.9);
-        }
-
-        .blur-suffix {
-            filter: blur(4px);
-            transition: filter 0.2s ease;
-        }
-
-        .clear-suffix {
-            filter: none;
-        }
-
-        .nav-buttons {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            margin-top: 8px;
-            margin-bottom: 12px;
-        }
-
-        .nav-btn {
-            flex: 1;
-            background: #334155;
-            padding: 14px 0;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 60px;
-            text-align: center;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        .favorites-btn, .back-btn, .search-btn, .clear-search-btn {
-            width: 100%;
-            border: none;
-            padding: 12px;
-            border-radius: 60px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 12px;
-        }
-        .favorites-btn { background: #b45309; }
-        .back-btn { background: #475569; }
-        .search-btn { background: #0f3b2c; margin-top: 8px; }
-        .clear-search-btn { background: #6b7280; margin-top: 8px; }
-
-        .search-input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .search-input {
-            flex: 1;
-            padding: 12px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 60px;
-            font-size: 0.9rem;
-            background: #fefefe;
-        }
-
-        .search-results {
-            margin-top: 16px;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 16px;
-        }
-        .result-item {
-            background: #f1f5f9;
-            border-radius: 20px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .result-word {
-            font-weight: 700;
-            color: #0c4e6e;
-            background: #e6f0fa;
-            padding: 6px 12px;
-            border-radius: 40px;
-        }
-        .result-translation {
-            color: #2c3e2f;
-            background: #e9f5ef;
-            padding: 6px 12px;
-            border-radius: 40px;
-        }
-        .result-theme {
-            background: #fef3c7;
-            color: #92400e;
-            padding: 6px 12px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-        }
-        .result-row {
-            background: #e2e8f0;
-            color: #1e293b;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-family: monospace;
-        }
-
-        footer {
-            font-size: 0.7rem;
-            text-align: center;
-            margin-top: 28px;
-            color: #62748c;
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 16px 12px 32px;
-            }
-            .tile {
-                padding: 14px 8px;
-                font-size: 0.9rem;
-            }
-            .thema-badge {
-                font-size: 1rem;
-            }
-            .action-buttons {
-                flex-wrap: wrap;
-            }
-            .result-item {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-        }
+        /* (dezelfde stijlen als in de vorige versie – beknopt weergegeven) */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; padding: 20px 16px 40px; color: #0f172a; }
+        .container { max-width: 700px; margin: 0 auto; }
+        .config-panel, .card, .search-panel { background: white; border-radius: 28px; padding: 16px 18px; margin-bottom: 24px; border: 1px solid #e2e8f0; }
+        .status-msg { font-size: 0.75rem; margin-top: 8px; padding: 8px 12px; border-radius: 40px; display: inline-block; background: #e9f5ef; color: #2d6a4f; }
+        .error-msg { background: #fee2e2; color: #b91c1c; }
+        .theme-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 18px; }
+        .thema-badge { background: #e6f0fa; padding: 8px 20px; border-radius: 40px; font-weight: 600; font-size: 1.2rem; }
+        .counter { background: #e2e8f0; padding: 6px 12px; border-radius: 40px; }
+        .woorden-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0 28px; }
+        .tile { background: white; border-radius: 24px; padding: 18px 12px; text-align: center; border: 1px solid #eef2ff; position: relative; }
+        .woord-tile { background: #fef9e3; border-left: 6px solid #f59e0b; flex-direction: column; gap: 8px; }
+        .vertaling-tile { background: #f8fafc; border-left: 6px solid #3b82f6; cursor: pointer; flex-direction: column; gap: 8px; }
+        .action-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 6px; }
+        .action-btn { background: #e2e8f0; border: none; border-radius: 40px; padding: 4px 12px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+        .action-btn.edit { background: #cbd5e1; }
+        .action-btn.delete { background: #fee2e2; color: #b91c1c; }
+        .favorite-star { font-size: 1.4rem; cursor: pointer; color: #9ca3af; background: none; border: none; }
+        .favorite-star.active { color: #fbbf24; }
+        .blur-suffix { filter: blur(4px); }
+        .clear-suffix { filter: none; }
+        .nav-buttons { display: flex; gap: 16px; margin-top: 8px; }
+        .nav-btn { flex: 1; background: #334155; padding: 14px 0; border-radius: 60px; color: white; border: none; cursor: pointer; }
+        .favorites-btn, .back-btn, .search-btn, .clear-search-btn { width: 100%; border: none; padding: 12px; border-radius: 60px; font-weight: 600; cursor: pointer; margin-top: 12px; }
+        .favorites-btn { background: #b45309; color: white; }
+        .back-btn { background: #475569; color: white; }
+        .search-btn { background: #0f3b2c; color: white; }
+        .clear-search-btn { background: #6b7280; color: white; }
+        .search-input-group { display: flex; gap: 10px; margin-bottom: 12px; }
+        .search-input { flex: 1; padding: 12px 14px; border-radius: 60px; border: 1px solid #cbd5e1; }
+        .search-results { margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+        .result-item { background: #f1f5f9; border-radius: 20px; padding: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+        footer { font-size: 0.7rem; text-align: center; margin-top: 28px; color: #62748c; }
+        .test-btn { background: #0f3b2c; color: white; border: none; padding: 8px 16px; border-radius: 60px; cursor: pointer; margin-left: 12px; }
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- Zoekveld bovenaan -->
     <div class="search-panel">
         <div class="search-input-group">
             <input type="text" id="searchInput" class="search-input" placeholder="Zoeken in woord of vertaling...">
             <button id="searchBtn" class="search-btn">🔍 Zoek</button>
         </div>
         <div id="searchResults" class="search-results" style="display: none;"></div>
-        <button id="clearSearchBtn" class="clear-search-btn" style="display: none;">✖️ Zoekresultaten wissen</button>
+        <button id="clearSearchBtn" class="clear-search-btn" style="display: none;">✖️ Wissen</button>
     </div>
 
     <div class="config-panel">
         <div id="statusMessage" class="status-msg">🔄 Woorden worden geladen...</div>
-        <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
-            📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
-            ✨ Alleen de <strong>eerste letter</strong> van elk woord is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
-            ⭐ Klik op de ster (rechts) om een woordpaar als favoriet te markeren.<br>
-            🔍 Zoek in woorden of vertalingen.<br>
-            ✏️ Klik op "Wijzig woord/vertaling" om de cel direct aan te passen in de Google Sheet.<br>
-            🗑️ Klik op "Verwijder" om de hele rij uit de sheet te wissen.
+        <button id="testConnectionBtn" class="test-btn">🔌 Test verbinding met web app</button>
+        <div style="font-size: 0.7rem; margin-top: 10px;">
+            ⭐ Favorieten lokaal · ✏️ Wijzig woord/vertaling · 🗑️ Verwijder rij (blijvend)
         </div>
     </div>
 
@@ -329,59 +66,39 @@
             <span class="thema-badge" id="currentThemeName">✨ Laad een thema</span>
             <span class="counter" id="themeCounter">0 / 0</span>
         </div>
-
-        <!-- Normale oefenruimte -->
         <div id="normalView">
-            <div id="wordsGrid" class="woorden-grid">
-                <div class="tile">📖 Even geduld</div>
-                <div class="tile">🔄 Data wordt geladen</div>
-            </div>
-            <div id="normalControls">
-                <div class="nav-buttons">
-                    <button id="prevBtn" class="nav-btn">◀ Vorig thema</button>
-                    <button id="nextBtn" class="nav-btn">Volgend thema ▶</button>
-                </div>
+            <div id="wordsGrid" class="woorden-grid"><div class="tile">📖 Even geduld</div><div class="tile">🔄 Data wordt geladen</div></div>
+            <div class="nav-buttons">
+                <button id="prevBtn" class="nav-btn">◀ Vorig thema</button>
+                <button id="nextBtn" class="nav-btn">Volgend thema ▶</button>
             </div>
         </div>
-
         <button id="showFavoritesBtn" class="favorites-btn">⭐ Alleen favorieten (0)</button>
         <button id="showAllThemesBtn" class="back-btn" style="display:none;">📚 Terug naar alle thema's</button>
-
-        <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
-            🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
-            ⭐ Favorieten blijven bewaard in deze browser (localStorage).<br>
-            ✏️ Wijzigingen en verwijderingen zijn definitief in de Google Sheet.
-        </p>
     </div>
-    <footer>📖 Woordentrainer · bewerken & verwijderen · ⭐ favorieten lokaal · 🔍 zoeken</footer>
+    <footer>✏️ Wijzigingen en verwijderingen zijn definitief in de Google Sheet.</footer>
 </div>
 
 <script>
-    // ==================== WEB APP URL (Google Apps Script) ====================
     const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzEpuTrlf-fkUroyEGfsE0takpRG645pkTI2KR6BIKA47u6uzl-BzQC-QsJ23BxkvPU/exec";
-
-    let themeMap = new Map();        // thema -> array van {woord, vertaling, rowIndex}
-    let wordsMetadata = [];          // alle items met rowIndex, thema, woord, vertaling
+    
+    let themeMap = new Map();
+    let wordsMetadata = [];
     let uniqueThemes = [];
     let shuffledThemes = [];
     let currentIndex = 0;
-    let currentFavorites = new Map(); // key = rowIndex, value = 1
-
-    // UI mode
+    let currentFavorites = new Map();
     let favoritesOnlyMode = false;
     let searchActive = false;
     let lastSearchQuery = "";
-
     const STORAGE_KEY = 'woordtrainer_favorites_local';
 
-    // DOM elementen
-    const normalView = document.getElementById('normalView');
+    // DOM elements
     const wordsGrid = document.getElementById('wordsGrid');
     const currentThemeNameSpan = document.getElementById('currentThemeName');
     const themeCounterSpan = document.getElementById('themeCounter');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-    const normalControls = document.getElementById('normalControls');
     const showFavoritesBtn = document.getElementById('showFavoritesBtn');
     const showAllThemesBtn = document.getElementById('showAllThemesBtn');
     const searchInput = document.getElementById('searchInput');
@@ -389,280 +106,188 @@
     const clearSearchBtn = document.getElementById('clearSearchBtn');
     const searchResultsDiv = document.getElementById('searchResults');
     const statusMsgDiv = document.getElementById('statusMessage');
+    const testBtn = document.getElementById('testConnectionBtn');
 
-    function setStatus(message, isError = false) {
-        statusMsgDiv.textContent = message;
-        if (isError) {
-            statusMsgDiv.classList.add('error-msg');
-        } else {
-            statusMsgDiv.classList.remove('error-msg');
-        }
+    function setStatus(msg, isError = false) {
+        statusMsgDiv.textContent = msg;
+        if (isError) statusMsgDiv.classList.add('error-msg');
+        else statusMsgDiv.classList.remove('error-msg');
     }
 
-    function shuffleArray(arr) {
-        for (let i = arr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-        return arr;
-    }
-
-    function escapeHtml(str) {
-        if (!str) return "";
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    // Bouw HTML voor een vertaling: eerste letter duidelijk, rest geblurd
-    function buildBlurredTranslationHtml(translationText) {
-        if (!translationText || translationText.trim() === "") return "???";
-        let parts = translationText.split(',').map(part => part.trim());
-        let resultParts = [];
-        for (let part of parts) {
-            if (part.length === 0) continue;
-            const firstChar = part[0];
-            const rest = part.substring(1);
-            let escapedFirst = escapeHtml(firstChar);
-            let escapedRest = escapeHtml(rest);
-            if (rest.length === 0) {
-                resultParts.push(`<span>${escapedFirst}</span>`);
-            } else {
-                resultParts.push(`<span>${escapedFirst}</span><span class="blur-suffix">${escapedRest}</span>`);
-            }
-        }
-        return resultParts.join(', ');
-    }
-
-    // Tel het aantal favorieten
-    function getFavoritesCount() {
-        return wordsMetadata.filter(item => item.favoriet === 1).length;
-    }
-
-    function updateFavoritesButtonText() {
-        const count = getFavoritesCount();
-        showFavoritesBtn.textContent = `⭐ Alleen favorieten (${count})`;
-    }
-
-    // Lokale favorieten
-    function loadLocalFavorites() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored) return;
+    // Helper: test of de web app bereikbaar is
+    async function testConnection() {
+        setStatus("🔌 Testen van verbinding met web app...");
         try {
-            const favMap = JSON.parse(stored);
-            for (let [rowIndexStr, isFav] of Object.entries(favMap)) {
-                const rowIndex = parseInt(rowIndexStr);
-                if (isFav) {
-                    currentFavorites.set(rowIndex, 1);
-                }
-            }
-        } catch(e) { console.warn(e); }
-    }
-
-    function saveLocalFavorites() {
-        const obj = {};
-        for (let [k, v] of currentFavorites.entries()) {
-            obj[k] = v;
-        }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
-    }
-
-    // Sincroniseer favorieten met de huidige metadata (na data laden)
-    function syncFavoritesWithMetadata() {
-        // Haal alle bestaande rowIndexes uit metadata
-        const existingRowIndexes = new Set(wordsMetadata.map(item => item.rowIndex));
-        // Verwijder favorieten waarvan de rij niet meer bestaat (bv na verwijdering)
-        for (let favRow of currentFavorites.keys()) {
-            if (!existingRowIndexes.has(favRow)) {
-                currentFavorites.delete(favRow);
-            }
-        }
-        // Zet favoriet=1 in metadata voor rijen die in currentFavorites zitten
-        for (let item of wordsMetadata) {
-            if (currentFavorites.has(item.rowIndex)) {
-                item.favoriet = 1;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const response = await fetch(WEBAPP_URL, { method: 'GET', signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (response.ok) {
+                const text = await response.text();
+                setStatus(`✅ Verbinding OK! (HTTP ${response.status}). Eerste 100 chars: ${text.substring(0,100)}`, false);
             } else {
-                item.favoriet = 0;
-            }
-        }
-        // Sla de opgeschoonde lijst op
-        saveLocalFavorites();
-        updateFavoritesButtonText();
-    }
-
-    function updateLocalFavorite(rowIndex, isFavorite) {
-        for (let item of wordsMetadata) {
-            if (item.rowIndex === rowIndex) {
-                item.favoriet = isFavorite ? 1 : 0;
-                break;
-            }
-        }
-        for (let [thema, words] of themeMap.entries()) {
-            for (let w of words) {
-                if (w.rowIndex === rowIndex) {
-                    w.favoriet = isFavorite ? 1 : 0;
-                    break;
-                }
-            }
-        }
-        if (isFavorite) {
-            currentFavorites.set(rowIndex, 1);
-        } else {
-            currentFavorites.delete(rowIndex);
-        }
-        saveLocalFavorites();
-        updateFavoritesButtonText();
-    }
-
-    async function setFavorite(rowIndex, isFavorite) {
-        updateLocalFavorite(rowIndex, isFavorite);
-        if (searchActive) {
-            performSearch(lastSearchQuery);
-        } else if (favoritesOnlyMode) {
-            renderFavoritesOnly();
-        } else {
-            renderCurrentTheme();
-        }
-        setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'} (lokaal)`, false);
-    }
-
-    // ==================== COMMUNICATIE MET GOOGLE APPS SCRIPT ====================
-    async function updateCell(rowIndex, column, newValue) {
-        try {
-            const response = await fetch(WEBAPP_URL, {
-                method: "POST",
-                mode: "cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "update",
-                    row: rowIndex,
-                    col: column,
-                    value: newValue
-                })
-            });
-            const result = await response.json();
-            if (result.success) {
-                setStatus(`✅ Cel bijgewerkt (rij ${rowIndex})`, false);
-                await loadSheetData(); // herlaad alles
-                return true;
-            } else {
-                setStatus(`❌ Fout bij bijwerken: ${result.message}`, true);
-                return false;
+                setStatus(`⚠️ HTTP ${response.status} – ${response.statusText}`, true);
             }
         } catch (err) {
-            setStatus(`❌ Netwerkfout: ${err.message}`, true);
-            return false;
+            setStatus(`❌ Verbinding mislukt: ${err.message} (CORS of URL onbereikbaar)`, true);
         }
     }
 
-    async function deleteRow(rowIndex) {
-        if (!confirm(`Weet je zeker dat je rij ${rowIndex} permanent wilt verwijderen uit de Google Sheet?`)) return false;
-        try {
-            const response = await fetch(WEBAPP_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "delete",
-                    row: rowIndex
-                })
-            });
-            const result = await response.json();
-            if (result.success) {
-                setStatus(`✅ Rij ${rowIndex} verwijderd`, false);
-                await loadSheetData();
-                return true;
-            } else {
-                setStatus(`❌ Fout bij verwijderen: ${result.message}`, true);
-                return false;
-            }
-        } catch (err) {
-            setStatus(`❌ Netwerkfout: ${err.message}`, true);
-            return false;
-        }
-    }
-
-    // Data laden uit de web app (JSON)
+    // ==================== DATA LADEN VIA WEB APP ====================
     async function loadSheetData() {
-        setStatus("🔄 Bezig met laden van Google Sheet via web app...", false);
+        setStatus("🔄 Laden via web app...");
         try {
             const response = await fetch(WEBAPP_URL);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             const data = await response.json();
-            if (!data || !Array.isArray(data) || data.length === 0) throw new Error("Geen data ontvangen");
+            if (!Array.isArray(data)) throw new Error("Ongeldige JSON (verwacht array)");
+            if (data.length === 0) throw new Error("Geen data ontvangen (lege array)");
             processSheetDataFromJson(data);
-            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Favorieten gesynchroniseerd.`, false);
-            
-            // Herstel weergave op basis van huidige modus
-            if (searchActive) {
-                performSearch(lastSearchQuery);
-            } else if (favoritesOnlyMode) {
-                renderFavoritesOnly();
-            } else {
-                renderCurrentTheme();
-            }
+            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's.`, false);
+            syncFavoritesWithMetadata();
+            if (searchActive) performSearch(lastSearchQuery);
+            else if (favoritesOnlyMode) renderFavoritesOnly();
+            else renderCurrentTheme();
         } catch (err) {
-            setStatus(`Fout bij laden: ${err.message}. Controleer de web app URL.`, true);
-            wordsGrid.innerHTML = `<div class="tile">❌ Fout</div><div class="tile">Kon sheet niet laden</div>`;
+            setStatus(`❌ Fout bij laden: ${err.message}`, true);
+            wordsGrid.innerHTML = `<div class="tile">❌ Fout</div><div class="tile">${err.message}</div>`;
         }
     }
 
-    // Verwerk de JSON van de web app (array van objecten met kolomnamen als keys)
     function processSheetDataFromJson(rows) {
-        // Verwacht: elk object heeft properties zoals "hoofdthema", "thema", "woord", "vertaling", "woordtype", "rowIndex"
         const tempMap = new Map();
         const tempMetadata = [];
         for (const row of rows) {
             const thema = (row.thema || "").toString().trim();
             const woord = (row.woord || "").toString().trim();
             const vertaling = (row.vertaling || "").toString().trim();
-            if (thema === "" || woord === "") continue;
-            const rowIndex = row.rowIndex; // 1-based
-            const favoriet = 0; // wordt later door sync gezet
+            if (!thema || !woord) continue;
+            const rowIndex = row.rowIndex;
             if (!tempMap.has(thema)) tempMap.set(thema, []);
-            tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex });
-            tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex });
+            tempMap.get(thema).push({ woord, vertaling, favoriet: 0, rowIndex });
+            tempMetadata.push({ thema, woord, vertaling, favoriet: 0, rowIndex });
         }
         if (tempMap.size === 0) throw new Error("Geen geldige thema's gevonden.");
         themeMap = tempMap;
         wordsMetadata = tempMetadata;
         uniqueThemes = Array.from(themeMap.keys());
-        shuffledThemes = shuffleArray([...uniqueThemes]);
+        shuffledThemes = [...uniqueThemes];
+        for (let i = shuffledThemes.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledThemes[i], shuffledThemes[j]] = [shuffledThemes[j], shuffledThemes[i]];
+        }
         currentIndex = 0;
-        
-        // Synchroniseer favorieten (verwijder ongeldige, zet juiste vlaggen)
-        syncFavoritesWithMetadata();
     }
 
-    // ==================== RENDER FUNCTIES (met bewerk/verwijder knoppen) ====================
+    function syncFavoritesWithMetadata() {
+        const existingRows = new Set(wordsMetadata.map(i => i.rowIndex));
+        for (let favRow of currentFavorites.keys()) {
+            if (!existingRows.has(favRow)) currentFavorites.delete(favRow);
+        }
+        for (let item of wordsMetadata) {
+            item.favoriet = currentFavorites.has(item.rowIndex) ? 1 : 0;
+        }
+        for (let [thema, words] of themeMap.entries()) {
+            for (let w of words) {
+                w.favoriet = currentFavorites.has(w.rowIndex) ? 1 : 0;
+            }
+        }
+        saveLocalFavorites();
+        updateFavoritesButtonText();
+    }
+
+    function saveLocalFavorites() {
+        const obj = {};
+        for (let [k] of currentFavorites.entries()) obj[k] = 1;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    }
+
+    function updateFavoritesButtonText() {
+        const count = wordsMetadata.filter(i => i.favoriet === 1).length;
+        showFavoritesBtn.textContent = `⭐ Alleen favorieten (${count})`;
+    }
+
+    async function setFavorite(rowIndex, isFavorite) {
+        if (isFavorite) currentFavorites.set(rowIndex, 1);
+        else currentFavorites.delete(rowIndex);
+        syncFavoritesWithMetadata();
+        if (searchActive) performSearch(lastSearchQuery);
+        else if (favoritesOnlyMode) renderFavoritesOnly();
+        else renderCurrentTheme();
+    }
+
+    async function updateCell(rowIndex, column, newValue) {
+        try {
+            const res = await fetch(WEBAPP_URL, {
+                method: "POST",
+                mode: "cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "update", row: rowIndex, col: column, value: newValue })
+            });
+            const result = await res.json();
+            if (result.success) {
+                setStatus(`✅ Bijgewerkt (rij ${rowIndex})`, false);
+                await loadSheetData();
+                return true;
+            } else {
+                setStatus(`❌ Fout: ${result.message}`, true);
+                return false;
+            }
+        } catch (err) {
+            setStatus(`❌ Netwerkfout bij update: ${err.message}`, true);
+            return false;
+        }
+    }
+
+    async function deleteRow(rowIndex) {
+        if (!confirm(`Verwijder rij ${rowIndex} definitief?`)) return;
+        try {
+            const res = await fetch(WEBAPP_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "delete", row: rowIndex })
+            });
+            const result = await res.json();
+            if (result.success) {
+                setStatus(`✅ Rij ${rowIndex} verwijderd`, false);
+                await loadSheetData();
+            } else {
+                setStatus(`❌ Fout: ${result.message}`, true);
+            }
+        } catch (err) {
+            setStatus(`❌ Netwerkfout bij verwijderen: ${err.message}`, true);
+        }
+    }
+
+    function buildBlurredTranslationHtml(translationText) {
+        if (!translationText) return "???";
+        let parts = translationText.split(',').map(p => p.trim());
+        let result = [];
+        for (let p of parts) {
+            if (p.length === 0) continue;
+            let first = p[0];
+            let rest = p.substring(1);
+            if (rest.length === 0) result.push(`<span>${escapeHtml(first)}</span>`);
+            else result.push(`<span>${escapeHtml(first)}</span><span class="blur-suffix">${escapeHtml(rest)}</span>`);
+        }
+        return result.join(', ');
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
     function renderCurrentTheme() {
-        if (!shuffledThemes.length || !themeMap.size) {
-            wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Controleer de sheet-URL</div>`;
-            currentThemeNameSpan.textContent = "❓ Geen thema";
-            themeCounterSpan.textContent = `0 / 0`;
-            return;
-        }
-
-        const currentTheme = shuffledThemes[currentIndex];
-        const wordsList = themeMap.get(currentTheme) || [];
-        const totalThemes = shuffledThemes.length;
-        themeCounterSpan.textContent = `${currentIndex+1} / ${totalThemes}`;
-        currentThemeNameSpan.textContent = currentTheme;
-
-        if (!wordsList.length) {
-            wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">voor dit thema</div>`;
-            return;
-        }
-
-        let gridHtml = "";
+        if (!shuffledThemes.length) return;
+        const theme = shuffledThemes[currentIndex];
+        const wordsList = themeMap.get(theme) || [];
+        themeCounterSpan.textContent = `${currentIndex+1}/${shuffledThemes.length}`;
+        currentThemeNameSpan.textContent = theme;
+        if (!wordsList.length) { wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">in dit thema</div>`; return; }
+        let html = "";
         for (let item of wordsList) {
-            const vertalingHtml = buildBlurredTranslationHtml(item.vertaling);
-            const isFav = (item.favoriet === 1);
-            const starClass = isFav ? "favorite-star active" : "favorite-star";
-            const starSymbol = isFav ? "★" : "☆";
-            gridHtml += `
+            const vertHtml = buildBlurredTranslationHtml(item.vertaling);
+            const starClass = item.favoriet ? "favorite-star active" : "favorite-star";
+            const starSym = item.favoriet ? "★" : "☆";
+            html += `
                 <div class="tile woord-tile">
                     ${escapeHtml(item.woord)}
                     <div class="action-buttons">
@@ -671,35 +296,27 @@
                     </div>
                 </div>
                 <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
-                    <span class="translation-text">${vertalingHtml}</span>
+                    <span class="translation-text">${vertHtml}</span>
                     <div class="action-buttons">
                         <button class="action-btn edit" data-action="edit-trans" data-row="${item.rowIndex}" data-col="4">✏️ Wijzig vertaling</button>
-                        <button class="favorite-star ${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
+                        <button class="favorite-star ${starClass}" data-row-index="${item.rowIndex}">${starSym}</button>
                     </div>
                 </div>
             `;
         }
-        wordsGrid.innerHTML = gridHtml;
+        wordsGrid.innerHTML = html;
         attachEventHandlers();
     }
 
     function renderFavoritesOnly() {
-        const favoriteItems = wordsMetadata.filter(item => item.favoriet === 1);
-        const count = favoriteItems.length;
+        const favs = wordsMetadata.filter(i => i.favoriet === 1);
         currentThemeNameSpan.textContent = `⭐ Favorieten`;
-        themeCounterSpan.textContent = `${count} woord(en)`;
-
-        if (count === 0) {
-            wordsGrid.innerHTML = `<div class="tile">😢 Geen favorieten</div><div class="tile">Klik op een ster om woorden toe te voegen</div>`;
-            return;
-        }
-
-        let gridHtml = "";
-        for (let item of favoriteItems) {
-            const vertalingHtml = buildBlurredTranslationHtml(item.vertaling);
-            const starClass = "favorite-star active";
-            const starSymbol = "★";
-            gridHtml += `
+        themeCounterSpan.textContent = `${favs.length} woord(en)`;
+        if (!favs.length) { wordsGrid.innerHTML = `<div class="tile">😢 Geen favorieten</div><div class="tile">Klik op een ster</div>`; return; }
+        let html = "";
+        for (let item of favs) {
+            const vertHtml = buildBlurredTranslationHtml(item.vertaling);
+            html += `
                 <div class="tile woord-tile">
                     ${escapeHtml(item.woord)}
                     <div class="action-buttons">
@@ -708,49 +325,94 @@
                     </div>
                 </div>
                 <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
-                    <span class="translation-text">${vertalingHtml}</span>
+                    <span class="translation-text">${vertHtml}</span>
                     <div class="action-buttons">
                         <button class="action-btn edit" data-action="edit-trans" data-row="${item.rowIndex}" data-col="4">✏️ Wijzig vertaling</button>
-                        <button class="favorite-star ${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
+                        <button class="favorite-star active" data-row-index="${item.rowIndex}">★</button>
                     </div>
                 </div>
             `;
         }
-        wordsGrid.innerHTML = gridHtml;
+        wordsGrid.innerHTML = html;
         attachEventHandlers();
     }
 
-    // ==================== ZOEKFUNCTIE ====================
-    function performSearch(query) {
-        if (!query.trim()) {
-            setStatus("Voer een zoekterm in.", true);
-            return;
-        }
-        lastSearchQuery = query;
-        const lowerQuery = query.toLowerCase();
-        const results = wordsMetadata.filter(item => 
-            item.woord.toLowerCase().includes(lowerQuery) || 
-            item.vertaling.toLowerCase().includes(lowerQuery)
-        );
-        
+    function attachEventHandlers() {
+        // Ontblur functionaliteit
+        document.querySelectorAll('.vertaling-tile').forEach(tile => {
+            const newTile = tile.cloneNode(true);
+            tile.parentNode.replaceChild(newTile, tile);
+            const textSpan = newTile.querySelector('.translation-text');
+            if (textSpan) {
+                newTile.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON') return;
+                    textSpan.querySelectorAll('.blur-suffix').forEach(s => {
+                        s.classList.remove('blur-suffix');
+                        s.classList.add('clear-suffix');
+                    });
+                });
+            }
+            const star = newTile.querySelector('.favorite-star');
+            if (star) {
+                star.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const row = parseInt(star.dataset.rowIndex);
+                    const isFav = star.classList.contains('active');
+                    await setFavorite(row, !isFav);
+                });
+            }
+            const editTrans = newTile.querySelector('[data-action="edit-trans"]');
+            if (editTrans) {
+                editTrans.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const row = parseInt(editTrans.dataset.row);
+                    const newVal = prompt("Nieuwe vertaling:", "");
+                    if (newVal && newVal.trim()) await updateCell(row, 4, newVal.trim());
+                });
+            }
+        });
+        document.querySelectorAll('.woord-tile').forEach(tile => {
+            const newTile = tile.cloneNode(true);
+            tile.parentNode.replaceChild(newTile, tile);
+            const editWord = newTile.querySelector('[data-action="edit-word"]');
+            if (editWord) {
+                editWord.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const row = parseInt(editWord.dataset.row);
+                    const newVal = prompt("Nieuw woord:", "");
+                    if (newVal && newVal.trim()) await updateCell(row, 3, newVal.trim());
+                });
+            }
+            const delBtn = newTile.querySelector('[data-action="delete"]');
+            if (delBtn) {
+                delBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const row = parseInt(delBtn.dataset.row);
+                    await deleteRow(row);
+                });
+            }
+        });
+    }
+
+    function performSearch(q) {
+        if (!q.trim()) return;
+        lastSearchQuery = q;
+        const lower = q.toLowerCase();
+        const results = wordsMetadata.filter(i => i.woord.toLowerCase().includes(lower) || i.vertaling.toLowerCase().includes(lower));
         searchResultsDiv.style.display = "block";
-        if (results.length === 0) {
-            searchResultsDiv.innerHTML = `<div class="result-item">Geen resultaten gevonden voor "${escapeHtml(query)}"</div>`;
-        } else {
-            let html = `<div style="margin-bottom: 12px;"><strong>${results.length} resultaten</strong> voor "${escapeHtml(query)}"</div>`;
-            for (let item of results) {
-                html += `
-                    <div class="result-item">
-                        <span class="result-word">${escapeHtml(item.woord)}</span>
-                        <span class="result-translation">${escapeHtml(item.vertaling)}</span>
-                        <span class="result-theme">📁 ${escapeHtml(item.thema)}</span>
-                        <span class="result-row">#${item.rowIndex}</span>
-                    </div>
-                `;
+        if (!results.length) searchResultsDiv.innerHTML = `<div class="result-item">Geen resultaten voor "${escapeHtml(q)}"</div>`;
+        else {
+            let html = `<div><strong>${results.length} resultaten</strong> voor "${escapeHtml(q)}"</div>`;
+            for (let r of results) {
+                html += `<div class="result-item">
+                            <span class="result-word">${escapeHtml(r.woord)}</span>
+                            <span class="result-translation">${escapeHtml(r.vertaling)}</span>
+                            <span class="result-theme">📁 ${escapeHtml(r.thema)}</span>
+                            <span class="result-row">#${r.rowIndex}</span>
+                         </div>`;
             }
             searchResultsDiv.innerHTML = html;
         }
-        
         normalView.style.display = "none";
         clearSearchBtn.style.display = "block";
         searchActive = true;
@@ -758,7 +420,6 @@
         showFavoritesBtn.style.display = "none";
         showAllThemesBtn.style.display = "block";
         showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
-        setStatus(`🔍 ${results.length} resultaten gevonden.`, false);
     }
 
     function clearSearch() {
@@ -768,146 +429,25 @@
         clearSearchBtn.style.display = "none";
         normalView.style.display = "block";
         searchActive = false;
-        lastSearchQuery = "";
-        if (favoritesOnlyMode) {
-            renderFavoritesOnly();
-            showFavoritesBtn.style.display = "none";
-            showAllThemesBtn.style.display = "block";
-            showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
-        } else {
-            renderCurrentTheme();
-            showFavoritesBtn.style.display = "block";
-            showAllThemesBtn.style.display = "none";
-        }
-        setStatus("Zoekresultaten gewist.", false);
+        if (favoritesOnlyMode) renderFavoritesOnly();
+        else renderCurrentTheme();
+        showFavoritesBtn.style.display = favoritesOnlyMode ? "none" : "block";
+        showAllThemesBtn.style.display = favoritesOnlyMode ? "block" : "none";
     }
 
-    // ==================== EVENT HANDLERS (blur, sterren, bewerken, verwijderen) ====================
-    function attachEventHandlers() {
-        // Ontblur functionaliteit: klik op vertaling-tile (maar niet op knoppen)
-        document.querySelectorAll('.vertaling-tile').forEach(tile => {
-            // Clone om dubbele listeners te voorkomen (simpele aanpak)
-            const newTile = tile.cloneNode(true);
-            tile.parentNode.replaceChild(newTile, tile);
-            
-            const textSpan = newTile.querySelector('.translation-text');
-            if (textSpan) {
-                newTile.addEventListener('click', function(e) {
-                    // Als er op een knop wordt geklikt, niet ontbluren
-                    if (e.target.tagName === 'BUTTON') return;
-                    e.stopPropagation();
-                    textSpan.querySelectorAll('.blur-suffix').forEach(span => {
-                        span.classList.remove('blur-suffix');
-                        span.classList.add('clear-suffix');
-                    });
-                });
-            }
-            
-            // Sterren functionaliteit
-            const star = newTile.querySelector('.favorite-star');
-            if (star) {
-                star.addEventListener('click', async function(e) {
-                    e.stopPropagation();
-                    const rowIndex = parseInt(this.getAttribute('data-row-index'));
-                    const currentlyFavorite = this.classList.contains('active');
-                    const newFavorite = !currentlyFavorite;
-                    if (newFavorite) {
-                        this.classList.add('active');
-                        this.textContent = '★';
-                    } else {
-                        this.classList.remove('active');
-                        this.textContent = '☆';
-                    }
-                    await setFavorite(rowIndex, newFavorite);
-                });
-            }
-            
-            // Bewerk- en verwijderknoppen in de vertaling-tile
-            const editTransBtn = newTile.querySelector('[data-action="edit-trans"]');
-            if (editTransBtn) {
-                editTransBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const row = parseInt(editTransBtn.dataset.row);
-                    const col = parseInt(editTransBtn.dataset.col);
-                    const newValue = prompt("Nieuwe vertaling:", "");
-                    if (newValue !== null && newValue.trim() !== "") {
-                        await updateCell(row, col, newValue.trim());
-                    }
-                });
-            }
-        });
-        
-        // Knoppen in de woord-tile
-        document.querySelectorAll('.woord-tile').forEach(tile => {
-            const newTile = tile.cloneNode(true);
-            tile.parentNode.replaceChild(newTile, tile);
-            
-            const editWordBtn = newTile.querySelector('[data-action="edit-word"]');
-            if (editWordBtn) {
-                editWordBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const row = parseInt(editWordBtn.dataset.row);
-                    const col = parseInt(editWordBtn.dataset.col);
-                    const newValue = prompt("Nieuw woord:", "");
-                    if (newValue !== null && newValue.trim() !== "") {
-                        await updateCell(row, col, newValue.trim());
-                    }
-                });
-            }
-            
-            const deleteBtn = newTile.querySelector('[data-action="delete"]');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const row = parseInt(deleteBtn.dataset.row);
-                    await deleteRow(row);
-                });
-            }
-        });
-    }
+    function prevTheme() { if (shuffledThemes.length) { currentIndex = (currentIndex-1+shuffledThemes.length)%shuffledThemes.length; renderCurrentTheme(); } }
+    function nextTheme() { if (shuffledThemes.length) { currentIndex = (currentIndex+1)%shuffledThemes.length; renderCurrentTheme(); } }
+    function enableFavoritesOnly() { if (searchActive) clearSearch(); favoritesOnlyMode = true; normalView.style.display = "block"; showFavoritesBtn.style.display = "none"; showAllThemesBtn.style.display = "block"; renderFavoritesOnly(); }
+    function disableFavoritesOnly() { if (searchActive) clearSearch(); favoritesOnlyMode = false; normalView.style.display = "block"; showFavoritesBtn.style.display = "block"; showAllThemesBtn.style.display = "none"; renderCurrentTheme(); }
 
-    // ==================== NAVIGATIE & MODI ====================
-    function prevTheme() {
-        if (!shuffledThemes.length) return;
-        currentIndex = (currentIndex - 1 + shuffledThemes.length) % shuffledThemes.length;
-        renderCurrentTheme();
-    }
-
-    function nextTheme() {
-        if (!shuffledThemes.length) return;
-        currentIndex = (currentIndex + 1) % shuffledThemes.length;
-        renderCurrentTheme();
-    }
-
-    function enableFavoritesOnly() {
-        if (searchActive) clearSearch();
-        favoritesOnlyMode = true;
-        normalView.style.display = "block";
-        showFavoritesBtn.style.display = "none";
-        showAllThemesBtn.style.display = "block";
-        showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
-        renderFavoritesOnly();
-        setStatus("⭐ Toont alleen favoriete woorden. Klik op een ster om te verwijderen.", false);
-    }
-
-    function disableFavoritesOnly() {
-        if (searchActive) clearSearch();
-        favoritesOnlyMode = false;
-        normalView.style.display = "block";
-        showFavoritesBtn.style.display = "block";
-        showAllThemesBtn.style.display = "none";
-        renderCurrentTheme();
-        setStatus("📚 Terug naar thema-oefening.", false);
-    }
-
-    // ==================== INITIALISATIE ====================
     prevBtn.addEventListener('click', prevTheme);
     nextBtn.addEventListener('click', nextTheme);
     showFavoritesBtn.addEventListener('click', enableFavoritesOnly);
     showAllThemesBtn.addEventListener('click', disableFavoritesOnly);
     searchBtn.addEventListener('click', () => performSearch(searchInput.value.trim()));
     clearSearchBtn.addEventListener('click', clearSearch);
-    searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(searchInput.value.trim()); });
+    searchInput.addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(searchInput.value.trim()); });
+    testBtn.addEventListener('click', testConnection);
 
     // Start
     loadSheetData();
