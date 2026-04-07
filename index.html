@@ -134,7 +134,7 @@
             padding: 0;
             margin: 0;
             line-height: 1;
-            transition: transform 0.1s;
+            transition: transform 0.1s ease;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -156,8 +156,9 @@
             color: #dc2626;
             text-shadow: 0 0 1px #b91c1c;
         }
+        /* Fix: geen translateY op :active, alleen schalen om sprong te voorkomen */
         .favorite-star:active, .exclude-circle:active {
-            transform: translateY(-50%) scale(0.9);
+            transform: scale(0.9);
         }
 
         .blur-suffix {
@@ -329,6 +330,9 @@
                 align-items: stretch;
                 text-align: center;
             }
+            .remove-excluded-btn {
+                align-self: center;
+            }
         }
     </style>
 </head>
@@ -349,8 +353,8 @@
         <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
             📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
             ✨ Alleen de <strong>eerste letter</strong> van elk woord is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
-            ⭐ Favoriet (ster) – ✘ Uitsluiten (cirkel met kruis): uitgesloten woorden verdwijnen uit alle oefeningen.<br>
-            🔍 Zoeken toont alleen niet-uitgesloten woorden. "Uitgesloten overzicht" toont alle geblokkeerde regels.
+            ⭐ Favoriet (ster) – ✘ Uitsluiten (bolletje wordt kruisje): uitgesloten woorden verdwijnen uit alle oefeningen.<br>
+            🔍 Zoeken toont alleen niet-uitgesloten woorden. "Uitgesloten items" toont alle geblokkeerde regels.
         </div>
     </div>
 
@@ -374,7 +378,7 @@
             </div>
         </div>
 
-        <!-- aparte container voor het overzicht van uitgesloten woorden -->
+        <!-- aparte container voor het overzicht van uitgesloten items -->
         <div id="excludedOverviewContainer" style="display: none;">
             <div id="excludedOverviewList" class="excluded-overview"></div>
             <button id="closeExcludedOverviewBtn" class="back-btn">◀ Terug naar oefeningen</button>
@@ -382,17 +386,17 @@
 
         <div class="double-btn-row">
             <button id="showFavoritesBtn" class="favorites-btn">⭐ Favorieten (0)</button>
-            <button id="showExcludedOverviewBtn" class="excluded-overview-btn">✘ Uitgesloten overzicht</button>
+            <button id="showExcludedOverviewBtn" class="excluded-overview-btn">✘ Uitgesloten items (0)</button>
         </div>
         <button id="showAllThemesBtn" class="back-btn" style="display:none;">📚 Terug naar alle thema's</button>
 
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
             🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
-            ⭐ Favorieten & ✘ uitgesloten woorden blijven bewaard in deze browser (localStorage).<br>
+            ⭐ Favoriet & ✘ uitsluiten (kruisje) blijven bewaard in deze browser.<br>
             ✘ Uitgesloten woorden verschijnen niet meer in oefeningen / favorieten / zoekresultaten.
         </p>
     </div>
-    <footer>📖 Woordentrainer · eerste letter duidelijk · klik om te ontbluren · ⭐ favoriet · ✘ uitsluiten (kruisje) · overzicht</footer>
+    <footer>📖 Woordentrainer · eerste letter duidelijk · klik om te ontbluren · ⭐ favoriet · ✘ uitsluiten (bolletje → kruisje) · overzicht</footer>
 </div>
 
 <script>
@@ -422,7 +426,6 @@
     const themeCounterSpan = document.getElementById('themeCounter');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-    const normalControls = document.getElementById('normalControls');
     const showFavoritesBtn = document.getElementById('showFavoritesBtn');
     const showAllThemesBtn = document.getElementById('showAllThemesBtn');
     const showExcludedOverviewBtn = document.getElementById('showExcludedOverviewBtn');
@@ -482,7 +485,7 @@
         return resultParts.join(', ');
     }
 
-    // Aantal favorieten (alleen niet-uitgesloten? Nee tellen we totaal, knop laat alleen zien hoeveel er in totaal zijn, maar in favorietenmodus worden uitgesloten genegeerd)
+    // Aantal favorieten (totaal, niet gefilterd op uitsluiting)
     function getFavoritesCount() {
         return wordsMetadata.filter(item => item.favoriet === 1).length;
     }
@@ -490,6 +493,15 @@
     function updateFavoritesButtonText() {
         const count = getFavoritesCount();
         showFavoritesBtn.textContent = `⭐ Favorieten (${count})`;
+    }
+
+    function getExcludedCount() {
+        return excludedSet.size;
+    }
+
+    function updateExcludedButtonText() {
+        const count = getExcludedCount();
+        showExcludedOverviewBtn.textContent = `✘ Uitgesloten items (${count})`;
     }
 
     // ----------  UITSLUITING (kruisjes) ----------
@@ -536,6 +548,7 @@
             }
         }
         saveLocalExcluded();
+        updateExcludedButtonText();
         
         // Herstel weergave op basis van huidige modus
         if (excludedOverviewMode) {
@@ -663,6 +676,7 @@
         loadLocalFavorites();
         loadLocalExcluded();  // zorgt dat excludedSet en metadata/themamap up-to-date zijn
         updateFavoritesButtonText();
+        updateExcludedButtonText();
         return true;
     }
 
@@ -810,7 +824,7 @@
         setStatus("Zoekresultaten gewist.", false);
     }
 
-    // Overzicht van alle uitgesloten regels
+    // Overzicht van alle uitgesloten items
     function renderExcludedOverview() {
         const excludedItems = wordsMetadata.filter(item => excludedSet.has(item.rowIndex));
         excludedOverviewContainer.style.display = "block";
@@ -826,9 +840,9 @@
         showAllThemesBtn.textContent = "📚 Terug naar oefeningen";
         
         if (excludedItems.length === 0) {
-            excludedOverviewList.innerHTML = `<div class="excluded-empty">📭 Geen uitgesloten woorden (geen kruisjes). Klik op ○ om een woord uit te sluiten.</div>`;
+            excludedOverviewList.innerHTML = `<div class="excluded-empty">📭 Geen uitgesloten items (geen kruisjes). Klik op ○ om een woord uit te sluiten.</div>`;
         } else {
-            let html = `<div style="margin-bottom: 12px;"><strong>✘ Uitgesloten woorden (${excludedItems.length})</strong> — klik op verwijder om kruisje weg te halen</div>`;
+            let html = `<div style="margin-bottom: 12px;"><strong>✘ Uitgesloten items (${excludedItems.length})</strong> — klik op verwijder om kruisje weg te halen</div>`;
             for (let item of excludedItems) {
                 html += `
                     <div class="excluded-item" data-row="${item.rowIndex}">
@@ -836,7 +850,7 @@
                         <span class="excluded-translation">${escapeHtml(item.vertaling)}</span>
                         <span class="excluded-theme">📁 ${escapeHtml(item.thema)}</span>
                         <span class="excluded-row">#${item.rowIndex}</span>
-                        <button class="remove-excluded-btn" data-row="${item.rowIndex}">✘ Kruisje verwijderen</button>
+                        <button class="remove-excluded-btn" data-row="${item.rowIndex}">✘ Verwijder</button>
                     </div>
                 `;
             }
@@ -851,7 +865,7 @@
                 });
             });
         }
-        currentThemeNameSpan.textContent = `✘ Uitgesloten overzicht`;
+        currentThemeNameSpan.textContent = `✘ Uitgesloten items`;
         themeCounterSpan.textContent = `${excludedItems.length} uitgesloten`;
     }
 
@@ -873,7 +887,7 @@
         setStatus("Terug naar oefenmodus.", false);
     }
 
-    // Event handlers voor ontblurren + ster + bolletje
+    // Event handlers voor ontblurren + ster + bolletje (kruisje)
     function attachEventHandlers() {
         document.querySelectorAll('.vertaling-tile').forEach(tile => {
             const textSpan = tile.querySelector('.translation-text');
@@ -908,12 +922,13 @@
                         await setFavorite(rowIndex, newFavorite);
                     });
                 }
-                // Bolletje (uitsluiten) actie
+                // Bolletje (uitsluiten) actie: toont direct kruisje of bolletje via class/text update
                 const exclBtn = newTile.querySelector('.exclude-circle');
                 if (exclBtn) {
                     exclBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         const rowIndex = parseInt(this.getAttribute('data-row-index'));
+                        // Visuele feedback direct (zonder wachten op re-render) om vloeiend te houden
                         const currentlyExcluded = this.classList.contains('active');
                         if (currentlyExcluded) {
                             this.classList.remove('active');
