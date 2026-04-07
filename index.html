@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Woordentrainer · zoeken · favorieten (lokaal)</title>
+    <title>Woordentrainer · uitsluiten · favorieten (lokaal)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         * {
@@ -111,31 +111,52 @@
             cursor: pointer;
             flex-direction: row;
             flex-wrap: wrap;
-            gap: 0;
+            gap: 6px;
             justify-content: center;
-            padding: 18px 32px 18px 12px;
+            padding: 18px 48px 18px 12px;
         }
 
-        .favorite-star {
+        .action-buttons {
             position: absolute;
-            right: 12px;
+            right: 10px;
             top: 50%;
             transform: translateY(-50%);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .favorite-star, .exclude-circle {
             font-size: 1.4rem;
             cursor: pointer;
-            color: #9ca3af;
             background: transparent;
             border: none;
             padding: 0;
             margin: 0;
             line-height: 1;
             transition: transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+        .favorite-star {
+            color: #9ca3af;
         }
         .favorite-star.active {
             color: #fbbf24;
             text-shadow: 0 0 2px #d97706;
         }
-        .favorite-star:active {
+        .exclude-circle {
+            color: #6b7280;
+            font-weight: 600;
+        }
+        .exclude-circle.active {
+            color: #dc2626;
+            text-shadow: 0 0 1px #b91c1c;
+        }
+        .favorite-star:active, .exclude-circle:active {
             transform: translateY(-50%) scale(0.9);
         }
 
@@ -169,8 +190,25 @@
             cursor: pointer;
         }
 
-        .favorites-btn, .back-btn, .search-btn, .clear-search-btn {
+        .double-btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .favorites-btn, .excluded-overview-btn {
+            flex: 1;
+            border: none;
+            padding: 12px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .favorites-btn { background: #b45309; }
+        .excluded-overview-btn { background: #4b5563; }
+        .back-btn { 
             width: 100%;
+            background: #475569; 
             border: none;
             padding: 12px;
             border-radius: 60px;
@@ -179,8 +217,6 @@
             cursor: pointer;
             margin-top: 12px;
         }
-        .favorites-btn { background: #b45309; }
-        .back-btn { background: #475569; }
         .search-btn { background: #0f3b2c; margin-top: 8px; }
         .clear-search-btn { background: #6b7280; margin-top: 8px; }
 
@@ -198,12 +234,12 @@
             background: #fefefe;
         }
 
-        .search-results {
+        .search-results, .excluded-overview {
             margin-top: 16px;
             border-top: 1px solid #e2e8f0;
             padding-top: 16px;
         }
-        .result-item {
+        .result-item, .excluded-item {
             background: #f1f5f9;
             border-radius: 20px;
             padding: 12px;
@@ -214,33 +250,48 @@
             align-items: center;
             justify-content: space-between;
         }
-        .result-word {
+        .result-word, .excluded-word {
             font-weight: 700;
             color: #0c4e6e;
             background: #e6f0fa;
             padding: 6px 12px;
             border-radius: 40px;
         }
-        .result-translation {
+        .result-translation, .excluded-translation {
             color: #2c3e2f;
             background: #e9f5ef;
             padding: 6px 12px;
             border-radius: 40px;
         }
-        .result-theme {
+        .result-theme, .excluded-theme {
             background: #fef3c7;
             color: #92400e;
             padding: 6px 12px;
             border-radius: 40px;
             font-size: 0.8rem;
         }
-        .result-row {
+        .result-row, .excluded-row {
             background: #e2e8f0;
             color: #1e293b;
             padding: 4px 8px;
             border-radius: 20px;
             font-size: 0.7rem;
             font-family: monospace;
+        }
+        .remove-excluded-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .excluded-empty {
+            text-align: center;
+            padding: 24px;
+            color: #6b7280;
         }
 
         footer {
@@ -262,13 +313,18 @@
                 font-size: 1rem;
             }
             .vertaling-tile {
-                padding: 14px 28px 14px 8px;
+                padding: 14px 48px 14px 8px;
             }
-            .favorite-star {
-                right: 8px;
+            .action-buttons {
+                right: 6px;
+                gap: 4px;
+            }
+            .favorite-star, .exclude-circle {
                 font-size: 1.2rem;
+                width: 24px;
+                height: 24px;
             }
-            .result-item {
+            .result-item, .excluded-item {
                 flex-direction: column;
                 align-items: stretch;
                 text-align: center;
@@ -293,8 +349,8 @@
         <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
             📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
             ✨ Alleen de <strong>eerste letter</strong> van elk woord is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
-            ⭐ Klik op de ster (rechts) om een woordpaar als favoriet te markeren.<br>
-            🔍 Zoek in woorden of vertalingen (resultaten zijn helder, met thema en rijnummer).
+            ⭐ Favoriet (ster) – ✘ Uitsluiten (cirkel met kruis): uitgesloten woorden verdwijnen uit alle oefeningen.<br>
+            🔍 Zoeken toont alleen niet-uitgesloten woorden. "Uitgesloten overzicht" toont alle geblokkeerde regels.
         </div>
     </div>
 
@@ -304,7 +360,7 @@
             <span class="counter" id="themeCounter">0 / 0</span>
         </div>
 
-        <!-- Normale oefenruimte -->
+        <!-- Normale oefenruimte / favorieten / algemene weergave -->
         <div id="normalView">
             <div id="wordsGrid" class="woorden-grid">
                 <div class="tile">📖 Even geduld</div>
@@ -318,33 +374,46 @@
             </div>
         </div>
 
-        <button id="showFavoritesBtn" class="favorites-btn">⭐ Alleen favorieten (0)</button>
+        <!-- aparte container voor het overzicht van uitgesloten woorden -->
+        <div id="excludedOverviewContainer" style="display: none;">
+            <div id="excludedOverviewList" class="excluded-overview"></div>
+            <button id="closeExcludedOverviewBtn" class="back-btn">◀ Terug naar oefeningen</button>
+        </div>
+
+        <div class="double-btn-row">
+            <button id="showFavoritesBtn" class="favorites-btn">⭐ Favorieten (0)</button>
+            <button id="showExcludedOverviewBtn" class="excluded-overview-btn">✘ Uitgesloten overzicht</button>
+        </div>
         <button id="showAllThemesBtn" class="back-btn" style="display:none;">📚 Terug naar alle thema's</button>
 
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
             🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
-            ⭐ Favorieten blijven bewaard in deze browser (localStorage).
+            ⭐ Favorieten & ✘ uitgesloten woorden blijven bewaard in deze browser (localStorage).<br>
+            ✘ Uitgesloten woorden verschijnen niet meer in oefeningen / favorieten / zoekresultaten.
         </p>
     </div>
-    <footer>📖 Woordentrainer · eerste letter duidelijk, rest geblurd · klik om te ontbluren · ⭐ favorieten lokaal · 🔍 zoeken</footer>
+    <footer>📖 Woordentrainer · eerste letter duidelijk · klik om te ontbluren · ⭐ favoriet · ✘ uitsluiten (kruisje) · overzicht</footer>
 </div>
 
 <script>
     // ==================== VASTE SHEET URL ====================
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4fy7nXPC0eIsUahhSARIJiEUI_ueK0oA8KcYstpExp82gjPbpX14-L0U6iChiOTM9ikOAGBvlIgn/pub?gid=1193995968&single=true&output=csv";
 
-    let themeMap = new Map();        // thema -> array van {woord, vertaling, rowIndex}
-    let wordsMetadata = [];          // alle items met rowIndex, thema, woord, vertaling
+    let themeMap = new Map();        // thema -> array van {woord, vertaling, rowIndex, favoriet, uitgesloten}
+    let wordsMetadata = [];          // alle items met rowIndex, thema, woord, vertaling, favoriet, uitgesloten
     let uniqueThemes = [];
     let shuffledThemes = [];
     let currentIndex = 0;
     let currentFavorites = new Map(); // key = rowIndex, value = 1
+    let excludedSet = new Set();       // rowIndex van uitgesloten woorden (kruisje)
 
-    // UI mode
+    // UI modes
     let favoritesOnlyMode = false;
     let searchActive = false;
+    let excludedOverviewMode = false;
 
-    const STORAGE_KEY = 'woordtrainer_favorites_local';
+    const STORAGE_KEY_FAV = 'woordtrainer_favorites_local';
+    const STORAGE_KEY_EXCL = 'woordtrainer_excluded_local';
 
     // DOM elementen
     const normalView = document.getElementById('normalView');
@@ -356,6 +425,10 @@
     const normalControls = document.getElementById('normalControls');
     const showFavoritesBtn = document.getElementById('showFavoritesBtn');
     const showAllThemesBtn = document.getElementById('showAllThemesBtn');
+    const showExcludedOverviewBtn = document.getElementById('showExcludedOverviewBtn');
+    const excludedOverviewContainer = document.getElementById('excludedOverviewContainer');
+    const excludedOverviewList = document.getElementById('excludedOverviewList');
+    const closeExcludedOverviewBtn = document.getElementById('closeExcludedOverviewBtn');
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
@@ -389,7 +462,7 @@
         });
     }
 
-    // Bouw HTML voor een vertaling: eerste letter duidelijk, rest geblurd (alleen voor normale weergave)
+    // Bouw HTML voor een vertaling: eerste letter duidelijk, rest geblurd
     function buildBlurredTranslationHtml(translationText) {
         if (!translationText || translationText.trim() === "") return "???";
         let parts = translationText.split(',').map(part => part.trim());
@@ -409,19 +482,78 @@
         return resultParts.join(', ');
     }
 
-    // Tel het aantal favorieten
+    // Aantal favorieten (alleen niet-uitgesloten? Nee tellen we totaal, knop laat alleen zien hoeveel er in totaal zijn, maar in favorietenmodus worden uitgesloten genegeerd)
     function getFavoritesCount() {
         return wordsMetadata.filter(item => item.favoriet === 1).length;
     }
 
     function updateFavoritesButtonText() {
         const count = getFavoritesCount();
-        showFavoritesBtn.textContent = `⭐ Alleen favorieten (${count})`;
+        showFavoritesBtn.textContent = `⭐ Favorieten (${count})`;
     }
 
-    // Lokale favorieten
+    // ----------  UITSLUITING (kruisjes) ----------
+    function loadLocalExcluded() {
+        const stored = localStorage.getItem(STORAGE_KEY_EXCL);
+        if (!stored) return;
+        try {
+            const exclArray = JSON.parse(stored);
+            if (Array.isArray(exclArray)) {
+                excludedSet.clear();
+                exclArray.forEach(row => excludedSet.add(row));
+                // sync naar metadata en themaMap
+                for (let item of wordsMetadata) {
+                    item.uitgesloten = excludedSet.has(item.rowIndex) ? 1 : 0;
+                }
+                for (let [thema, words] of themeMap.entries()) {
+                    for (let w of words) {
+                        w.uitgesloten = excludedSet.has(w.rowIndex) ? 1 : 0;
+                    }
+                }
+            }
+        } catch(e) { console.warn(e); }
+    }
+
+    function saveLocalExcluded() {
+        const exclArray = Array.from(excludedSet);
+        localStorage.setItem(STORAGE_KEY_EXCL, JSON.stringify(exclArray));
+    }
+
+    function toggleExcluded(rowIndex) {
+        const isExcluded = excludedSet.has(rowIndex);
+        if (isExcluded) {
+            excludedSet.delete(rowIndex);
+        } else {
+            excludedSet.add(rowIndex);
+        }
+        // update metadata & themaMap
+        for (let item of wordsMetadata) {
+            if (item.rowIndex === rowIndex) item.uitgesloten = excludedSet.has(rowIndex) ? 1 : 0;
+        }
+        for (let [thema, words] of themeMap.entries()) {
+            for (let w of words) {
+                if (w.rowIndex === rowIndex) w.uitgesloten = excludedSet.has(rowIndex) ? 1 : 0;
+            }
+        }
+        saveLocalExcluded();
+        
+        // Herstel weergave op basis van huidige modus
+        if (excludedOverviewMode) {
+            renderExcludedOverview();
+        } else if (searchActive) {
+            performSearch(searchInput.value.trim(), true);
+        } else if (favoritesOnlyMode) {
+            renderFavoritesOnly();
+        } else {
+            renderCurrentTheme();
+        }
+        setStatus(`✘ Woord ${isExcluded ? 'niet meer uitgesloten' : 'uitgesloten'} (kruisje)`, false);
+        updateFavoritesButtonText(); // toon evt aangepast aantal favorieten (maar favorieten blijven bestaan)
+    }
+
+    // ---------- FAVORIETEN ----------
     function loadLocalFavorites() {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = localStorage.getItem(STORAGE_KEY_FAV);
         if (!stored) return;
         try {
             const favMap = JSON.parse(stored);
@@ -447,7 +579,7 @@
         for (let [k, v] of currentFavorites.entries()) {
             obj[k] = v;
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+        localStorage.setItem(STORAGE_KEY_FAV, JSON.stringify(obj));
     }
 
     function updateLocalFavorite(rowIndex, isFavorite) {
@@ -476,17 +608,19 @@
 
     async function setFavorite(rowIndex, isFavorite) {
         updateLocalFavorite(rowIndex, isFavorite);
-        if (searchActive) {
-            performSearch(searchInput.value.trim());
+        if (excludedOverviewMode) {
+            renderExcludedOverview();
+        } else if (searchActive) {
+            performSearch(searchInput.value.trim(), true);
         } else if (favoritesOnlyMode) {
             renderFavoritesOnly();
         } else {
             renderCurrentTheme();
         }
-        setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'} (lokaal)`, false);
+        setStatus(`⭐ Favoriet ${isFavorite ? 'toegevoegd' : 'verwijderd'}`, false);
     }
 
-    // Verwerk CSV naar thema's
+    // ---------- DATA PROCESSING ----------
     function processSheetData(csvRows) {
         let startIdx = 0;
         if (csvRows.length > 0) {
@@ -511,11 +645,12 @@
             const vertaling = row[vertalingColIdx] ? row[vertalingColIdx].toString().trim() : "";
             if (thema === "" || woord === "") continue;
 
-            const sheetRowNumber = i + 1; // 1-based
+            const sheetRowNumber = i + 1;
             const favoriet = 0;
+            const uitgesloten = 0;
             if (!tempMap.has(thema)) tempMap.set(thema, []);
-            tempMap.get(thema).push({ woord, vertaling, favoriet, rowIndex: sheetRowNumber });
-            tempMetadata.push({ thema, woord, vertaling, favoriet, rowIndex: sheetRowNumber });
+            tempMap.get(thema).push({ woord, vertaling, favoriet, uitgesloten, rowIndex: sheetRowNumber });
+            tempMetadata.push({ thema, woord, vertaling, favoriet, uitgesloten, rowIndex: sheetRowNumber });
         }
         if (tempMap.size === 0) throw new Error("Geen geldige thema's gevonden.");
         themeMap = tempMap;
@@ -524,12 +659,14 @@
         shuffledThemes = shuffleArray([...uniqueThemes]);
         currentIndex = 0;
         currentFavorites.clear();
+        excludedSet.clear();
         loadLocalFavorites();
+        loadLocalExcluded();  // zorgt dat excludedSet en metadata/themamap up-to-date zijn
         updateFavoritesButtonText();
         return true;
     }
 
-    // Render normale thema-modus (met blur)
+    // ---------- RENDER FUNCTIES (filteren op uitgesloten) ----------
     function renderCurrentTheme() {
         if (!shuffledThemes.length || !themeMap.size) {
             wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Controleer de sheet-URL</div>`;
@@ -537,15 +674,16 @@
             themeCounterSpan.textContent = `0 / 0`;
             return;
         }
-
         const currentTheme = shuffledThemes[currentIndex];
-        const wordsList = themeMap.get(currentTheme) || [];
+        let wordsList = themeMap.get(currentTheme) || [];
+        // Filter: uitgesloten woorden niet tonen
+        wordsList = wordsList.filter(item => !excludedSet.has(item.rowIndex));
         const totalThemes = shuffledThemes.length;
         themeCounterSpan.textContent = `${currentIndex+1} / ${totalThemes}`;
         currentThemeNameSpan.textContent = currentTheme;
 
         if (!wordsList.length) {
-            wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">voor dit thema</div>`;
+            wordsGrid.innerHTML = `<div class="tile">⚠️ Geen woorden</div><div class="tile">(alle woorden uitgesloten in dit thema)</div>`;
             return;
         }
 
@@ -553,13 +691,19 @@
         for (let item of wordsList) {
             const vertalingHtml = buildBlurredTranslationHtml(item.vertaling);
             const isFav = (item.favoriet === 1);
+            const isExcl = excludedSet.has(item.rowIndex);
             const starClass = isFav ? "favorite-star active" : "favorite-star";
             const starSymbol = isFav ? "★" : "☆";
+            const exclClass = isExcl ? "exclude-circle active" : "exclude-circle";
+            const exclSymbol = isExcl ? "✘" : "○";
             gridHtml += `
                 <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
                 <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
                     <span class="translation-text">${vertalingHtml}</span>
-                    <button class="${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
+                    <div class="action-buttons">
+                        <button class="${exclClass}" data-row-index="${item.rowIndex}" data-action="exclude">${exclSymbol}</button>
+                        <button class="${starClass}" data-row-index="${item.rowIndex}" data-action="favorite">${starSymbol}</button>
+                    </div>
                 </div>
             `;
         }
@@ -567,28 +711,33 @@
         attachEventHandlers();
     }
 
-    // Render alleen favoriete woorden
     function renderFavoritesOnly() {
-        const favoriteItems = wordsMetadata.filter(item => item.favoriet === 1);
+        let favoriteItems = wordsMetadata.filter(item => item.favoriet === 1 && !excludedSet.has(item.rowIndex));
         const count = favoriteItems.length;
-        currentThemeNameSpan.textContent = `⭐ Favorieten`;
+        currentThemeNameSpan.textContent = `⭐ Favorieten (uitgesloten verborgen)`;
         themeCounterSpan.textContent = `${count} woord(en)`;
 
         if (count === 0) {
-            wordsGrid.innerHTML = `<div class="tile">😢 Geen favorieten</div><div class="tile">Klik op een ster om woorden toe te voegen</div>`;
+            wordsGrid.innerHTML = `<div class="tile">😢 Geen favorieten</div><div class="tile">(of alle favorieten zijn uitgesloten)</div>`;
             return;
         }
 
         let gridHtml = "";
         for (let item of favoriteItems) {
             const vertalingHtml = buildBlurredTranslationHtml(item.vertaling);
+            const isExcl = excludedSet.has(item.rowIndex);
             const starClass = "favorite-star active";
             const starSymbol = "★";
+            const exclClass = isExcl ? "exclude-circle active" : "exclude-circle";
+            const exclSymbol = isExcl ? "✘" : "○";
             gridHtml += `
                 <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
                 <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
                     <span class="translation-text">${vertalingHtml}</span>
-                    <button class="${starClass}" data-row-index="${item.rowIndex}">${starSymbol}</button>
+                    <div class="action-buttons">
+                        <button class="${exclClass}" data-row-index="${item.rowIndex}" data-action="exclude">${exclSymbol}</button>
+                        <button class="${starClass}" data-row-index="${item.rowIndex}" data-action="favorite">${starSymbol}</button>
+                    </div>
                 </div>
             `;
         }
@@ -596,21 +745,20 @@
         attachEventHandlers();
     }
 
-    // Zoekfunctionaliteit (geen blur, heldere resultaten met thema en rijnummer)
-    function performSearch(query) {
+    function performSearch(query, skipFocusReset = false) {
         if (!query.trim()) {
             setStatus("Voer een zoekterm in.", true);
             return;
         }
         const lowerQuery = query.toLowerCase();
-        const results = wordsMetadata.filter(item => 
-            item.woord.toLowerCase().includes(lowerQuery) || 
-            item.vertaling.toLowerCase().includes(lowerQuery)
+        let results = wordsMetadata.filter(item => 
+            (item.woord.toLowerCase().includes(lowerQuery) || item.vertaling.toLowerCase().includes(lowerQuery)) &&
+            !excludedSet.has(item.rowIndex)   // uitgesloten woorden niet tonen in zoekresultaten
         );
         
         searchResultsDiv.style.display = "block";
         if (results.length === 0) {
-            searchResultsDiv.innerHTML = `<div class="result-item">Geen resultaten gevonden voor "${escapeHtml(query)}"</div>`;
+            searchResultsDiv.innerHTML = `<div class="result-item">Geen resultaten gevonden voor "${escapeHtml(query)}" (uitgesloten woorden zijn verborgen)</div>`;
         } else {
             let html = `<div style="margin-bottom: 12px;"><strong>${results.length} resultaten</strong> voor "${escapeHtml(query)}"</div>`;
             for (let item of results) {
@@ -625,16 +773,17 @@
             }
             searchResultsDiv.innerHTML = html;
         }
-        
-        // Schakel weergave naar zoekresultaten
         normalView.style.display = "none";
+        excludedOverviewContainer.style.display = "none";
         clearSearchBtn.style.display = "block";
         searchActive = true;
         favoritesOnlyMode = false;
+        excludedOverviewMode = false;
         showFavoritesBtn.style.display = "none";
+        showExcludedOverviewBtn.style.display = "none";
         showAllThemesBtn.style.display = "block";
         showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
-        setStatus(`🔍 ${results.length} resultaten gevonden.`, false);
+        setStatus(`🔍 ${results.length} resultaten (uitgesloten niet getoond).`, false);
     }
 
     function clearSearch() {
@@ -643,21 +792,88 @@
         searchResultsDiv.style.display = "none";
         clearSearchBtn.style.display = "none";
         normalView.style.display = "block";
+        excludedOverviewContainer.style.display = "none";
         searchActive = false;
-        if (favoritesOnlyMode) {
+        if (excludedOverviewMode) {
+            renderExcludedOverview();
+        } else if (favoritesOnlyMode) {
             renderFavoritesOnly();
             showFavoritesBtn.style.display = "none";
+            showExcludedOverviewBtn.style.display = "flex";
             showAllThemesBtn.style.display = "block";
-            showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
         } else {
             renderCurrentTheme();
-            showFavoritesBtn.style.display = "block";
+            showFavoritesBtn.style.display = "flex";
+            showExcludedOverviewBtn.style.display = "flex";
             showAllThemesBtn.style.display = "none";
         }
         setStatus("Zoekresultaten gewist.", false);
     }
 
-    // Event handlers voor ontblurren en sterren
+    // Overzicht van alle uitgesloten regels
+    function renderExcludedOverview() {
+        const excludedItems = wordsMetadata.filter(item => excludedSet.has(item.rowIndex));
+        excludedOverviewContainer.style.display = "block";
+        normalView.style.display = "none";
+        searchResultsDiv.style.display = "none";
+        clearSearchBtn.style.display = "none";
+        excludedOverviewMode = true;
+        favoritesOnlyMode = false;
+        searchActive = false;
+        showFavoritesBtn.style.display = "none";
+        showExcludedOverviewBtn.style.display = "none";
+        showAllThemesBtn.style.display = "block";
+        showAllThemesBtn.textContent = "📚 Terug naar oefeningen";
+        
+        if (excludedItems.length === 0) {
+            excludedOverviewList.innerHTML = `<div class="excluded-empty">📭 Geen uitgesloten woorden (geen kruisjes). Klik op ○ om een woord uit te sluiten.</div>`;
+        } else {
+            let html = `<div style="margin-bottom: 12px;"><strong>✘ Uitgesloten woorden (${excludedItems.length})</strong> — klik op verwijder om kruisje weg te halen</div>`;
+            for (let item of excludedItems) {
+                html += `
+                    <div class="excluded-item" data-row="${item.rowIndex}">
+                        <span class="excluded-word">${escapeHtml(item.woord)}</span>
+                        <span class="excluded-translation">${escapeHtml(item.vertaling)}</span>
+                        <span class="excluded-theme">📁 ${escapeHtml(item.thema)}</span>
+                        <span class="excluded-row">#${item.rowIndex}</span>
+                        <button class="remove-excluded-btn" data-row="${item.rowIndex}">✘ Kruisje verwijderen</button>
+                    </div>
+                `;
+            }
+            excludedOverviewList.innerHTML = html;
+            // event listeners voor verwijder knoppen
+            document.querySelectorAll('.remove-excluded-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const rowIdx = parseInt(btn.getAttribute('data-row'));
+                    if (excludedSet.has(rowIdx)) {
+                        toggleExcluded(rowIdx);
+                    }
+                });
+            });
+        }
+        currentThemeNameSpan.textContent = `✘ Uitgesloten overzicht`;
+        themeCounterSpan.textContent = `${excludedItems.length} uitgesloten`;
+    }
+
+    function closeExcludedOverview() {
+        excludedOverviewContainer.style.display = "none";
+        normalView.style.display = "block";
+        excludedOverviewMode = false;
+        if (favoritesOnlyMode) {
+            renderFavoritesOnly();
+            showFavoritesBtn.style.display = "none";
+            showExcludedOverviewBtn.style.display = "flex";
+            showAllThemesBtn.style.display = "block";
+        } else {
+            renderCurrentTheme();
+            showFavoritesBtn.style.display = "flex";
+            showExcludedOverviewBtn.style.display = "flex";
+            showAllThemesBtn.style.display = "none";
+        }
+        setStatus("Terug naar oefenmodus.", false);
+    }
+
+    // Event handlers voor ontblurren + ster + bolletje
     function attachEventHandlers() {
         document.querySelectorAll('.vertaling-tile').forEach(tile => {
             const textSpan = tile.querySelector('.translation-text');
@@ -665,17 +881,19 @@
                 const newTile = tile.cloneNode(true);
                 tile.parentNode.replaceChild(newTile, tile);
                 const newTextSpan = newTile.querySelector('.translation-text');
+                // klik op vertaling = ontblurren
                 newTile.addEventListener('click', function(e) {
-                    if (e.target.classList && e.target.classList.contains('favorite-star')) return;
+                    if (e.target.classList && (e.target.classList.contains('favorite-star') || e.target.classList.contains('exclude-circle'))) return;
                     e.stopPropagation();
                     newTextSpan.querySelectorAll('.blur-suffix').forEach(span => {
                         span.classList.remove('blur-suffix');
                         span.classList.add('clear-suffix');
                     });
                 });
-                const star = newTile.querySelector('.favorite-star');
-                if (star) {
-                    star.addEventListener('click', async function(e) {
+                // Ster actie
+                const starBtn = newTile.querySelector('.favorite-star');
+                if (starBtn) {
+                    starBtn.addEventListener('click', async function(e) {
                         e.stopPropagation();
                         const rowIndex = parseInt(this.getAttribute('data-row-index'));
                         const currentlyFavorite = this.classList.contains('active');
@@ -690,11 +908,27 @@
                         await setFavorite(rowIndex, newFavorite);
                     });
                 }
+                // Bolletje (uitsluiten) actie
+                const exclBtn = newTile.querySelector('.exclude-circle');
+                if (exclBtn) {
+                    exclBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const rowIndex = parseInt(this.getAttribute('data-row-index'));
+                        const currentlyExcluded = this.classList.contains('active');
+                        if (currentlyExcluded) {
+                            this.classList.remove('active');
+                            this.textContent = '○';
+                        } else {
+                            this.classList.add('active');
+                            this.textContent = '✘';
+                        }
+                        toggleExcluded(rowIndex);
+                    });
+                }
             }
         });
     }
 
-    // Data laden uit Google Sheets CSV
     async function loadSheetData() {
         setStatus("🔄 Bezig met laden van Google Sheet...", false);
         try {
@@ -708,13 +942,16 @@
             if (!rows || rows.length < 2) throw new Error("CSV heeft te weinig rijen");
             processSheetData(rows);
             if (uniqueThemes.length === 0) throw new Error("Geen thema's gevonden");
-            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Favorieten worden lokaal opgeslagen.`, false);
+            setStatus(`✅ Geladen! ${uniqueThemes.length} thema's. Uitsluitingen & favorieten lokaal.`, false);
             favoritesOnlyMode = false;
             searchActive = false;
+            excludedOverviewMode = false;
             normalView.style.display = "block";
+            excludedOverviewContainer.style.display = "none";
             searchResultsDiv.style.display = "none";
             clearSearchBtn.style.display = "none";
-            showFavoritesBtn.style.display = "block";
+            showFavoritesBtn.style.display = "flex";
+            showExcludedOverviewBtn.style.display = "flex";
             showAllThemesBtn.style.display = "none";
             renderCurrentTheme();
         } catch (err) {
@@ -723,35 +960,39 @@
         }
     }
 
-    // Navigatie functies
+    // Navigatie
     function prevTheme() {
         if (!shuffledThemes.length) return;
         currentIndex = (currentIndex - 1 + shuffledThemes.length) % shuffledThemes.length;
         renderCurrentTheme();
     }
-
     function nextTheme() {
         if (!shuffledThemes.length) return;
         currentIndex = (currentIndex + 1) % shuffledThemes.length;
         renderCurrentTheme();
     }
-
     function enableFavoritesOnly() {
         if (searchActive) clearSearch();
+        if (excludedOverviewMode) closeExcludedOverview();
         favoritesOnlyMode = true;
+        excludedOverviewMode = false;
         normalView.style.display = "block";
+        excludedOverviewContainer.style.display = "none";
         showFavoritesBtn.style.display = "none";
+        showExcludedOverviewBtn.style.display = "flex";
         showAllThemesBtn.style.display = "block";
         showAllThemesBtn.textContent = "📚 Terug naar alle thema's";
         renderFavoritesOnly();
-        setStatus("⭐ Toont alleen favoriete woorden. Klik op een ster om te verwijderen.", false);
+        setStatus("⭐ Toont alleen favoriete woorden (uitgesloten verborgen).", false);
     }
-
     function disableFavoritesOnly() {
         if (searchActive) clearSearch();
+        if (excludedOverviewMode) closeExcludedOverview();
         favoritesOnlyMode = false;
         normalView.style.display = "block";
-        showFavoritesBtn.style.display = "block";
+        excludedOverviewContainer.style.display = "none";
+        showFavoritesBtn.style.display = "flex";
+        showExcludedOverviewBtn.style.display = "flex";
         showAllThemesBtn.style.display = "none";
         renderCurrentTheme();
         setStatus("📚 Terug naar thema-oefening.", false);
@@ -762,11 +1003,12 @@
     nextBtn.addEventListener('click', nextTheme);
     showFavoritesBtn.addEventListener('click', enableFavoritesOnly);
     showAllThemesBtn.addEventListener('click', disableFavoritesOnly);
+    showExcludedOverviewBtn.addEventListener('click', () => renderExcludedOverview());
+    closeExcludedOverviewBtn.addEventListener('click', closeExcludedOverview);
     searchBtn.addEventListener('click', () => performSearch(searchInput.value.trim()));
     clearSearchBtn.addEventListener('click', clearSearch);
     searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(searchInput.value.trim()); });
 
-    // Start
     loadSheetData();
 </script>
 </body>
