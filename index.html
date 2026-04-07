@@ -109,24 +109,27 @@
             background: #f8fafc;
             border-left: 6px solid #3b82f6;
             cursor: pointer;
-            flex-direction: row;
-            flex-wrap: wrap;
-            gap: 6px;
-            justify-content: center;
-            padding: 18px 48px 18px 12px;
+            justify-content: space-between;
+            padding: 18px 12px 18px 12px;
+            gap: 8px;
         }
 
-        .action-buttons {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
+        /* linker gedeelte: bolletje + tekst */
+        .translation-left {
             display: flex;
-            gap: 10px;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            justify-content: flex-start;
+            text-align: left;
+        }
+        /* rechter gedeelte: ster */
+        .translation-right {
+            display: flex;
             align-items: center;
         }
 
-        .favorite-star, .exclude-circle {
+        .exclude-circle {
             font-size: 1.4rem;
             cursor: pointer;
             background: transparent;
@@ -138,27 +141,48 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
+            color: #6b7280;
+            font-weight: 600;
+            flex-shrink: 0;
         }
+        .exclude-circle.active {
+            color: #dc2626;
+            text-shadow: 0 0 1px #b91c1c;
+        }
+        .exclude-circle:active {
+            transform: scale(0.9);
+        }
+
         .favorite-star {
+            font-size: 1.4rem;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            transition: transform 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
             color: #9ca3af;
         }
         .favorite-star.active {
             color: #fbbf24;
             text-shadow: 0 0 2px #d97706;
         }
-        .exclude-circle {
-            color: #6b7280;
-            font-weight: 600;
-        }
-        .exclude-circle.active {
-            color: #dc2626;
-            text-shadow: 0 0 1px #b91c1c;
-        }
-        /* Fix: geen translateY op :active, alleen schalen om sprong te voorkomen */
-        .favorite-star:active, .exclude-circle:active {
+        .favorite-star:active {
             transform: scale(0.9);
+        }
+
+        .translation-text {
+            flex: 1;
+            line-height: 1.4;
+            text-align: left;
         }
 
         .blur-suffix {
@@ -314,16 +338,16 @@
                 font-size: 1rem;
             }
             .vertaling-tile {
-                padding: 14px 48px 14px 8px;
+                padding: 14px 8px;
+                gap: 6px;
             }
-            .action-buttons {
-                right: 6px;
-                gap: 4px;
+            .translation-left {
+                gap: 6px;
             }
-            .favorite-star, .exclude-circle {
+            .exclude-circle, .favorite-star {
                 font-size: 1.2rem;
-                width: 24px;
-                height: 24px;
+                width: 28px;
+                height: 28px;
             }
             .result-item, .excluded-item {
                 flex-direction: column;
@@ -353,7 +377,7 @@
         <div style="font-size: 0.7rem; margin-top: 10px; color:#4b5563;">
             📌 Kolommen: A=hoofdthema, B=thema, C=woord, D=vertaling, E=woordtype.<br>
             ✨ Alleen de <strong>eerste letter</strong> van elk woord is zichtbaar. Tik op een vertaling om de rest te ontbluren.<br>
-            ⭐ Favoriet (ster) – ✘ Uitsluiten (bolletje wordt kruisje): uitgesloten woorden verdwijnen uit alle oefeningen.<br>
+            ⭐ Favoriet (ster) – ✘ Uitsluiten (bolletje links) wordt kruisje: uitgesloten woorden verdwijnen uit alle oefeningen.<br>
             🔍 Zoeken toont alleen niet-uitgesloten woorden. "Uitgesloten items" toont alle geblokkeerde regels.
         </div>
     </div>
@@ -392,11 +416,11 @@
 
         <p style="font-size: 0.7rem; text-align: center; margin-top: 14px; color:#5b6e8c;">
             🔍 Vertaling is wazig (behalve eerste letter). Tik om te ontbluren.<br>
-            ⭐ Favoriet & ✘ uitsluiten (kruisje) blijven bewaard in deze browser.<br>
+            ⭐ Favoriet & ✘ uitsluiten (bolletje links) blijven bewaard.<br>
             ✘ Uitgesloten woorden verschijnen niet meer in oefeningen / favorieten / zoekresultaten.
         </p>
     </div>
-    <footer>📖 Woordentrainer · eerste letter duidelijk · klik om te ontbluren · ⭐ favoriet · ✘ uitsluiten (bolletje → kruisje) · overzicht</footer>
+    <footer>📖 Woordentrainer · eerste letter duidelijk · klik om te ontbluren · ⭐ favoriet · ✘ uitsluiten (bolletje links) · overzicht</footer>
 </div>
 
 <script>
@@ -561,7 +585,7 @@
             renderCurrentTheme();
         }
         setStatus(`✘ Woord ${isExcluded ? 'niet meer uitgesloten' : 'uitgesloten'} (kruisje)`, false);
-        updateFavoritesButtonText(); // toon evt aangepast aantal favorieten (maar favorieten blijven bestaan)
+        updateFavoritesButtonText();
     }
 
     // ---------- FAVORIETEN ----------
@@ -674,13 +698,13 @@
         currentFavorites.clear();
         excludedSet.clear();
         loadLocalFavorites();
-        loadLocalExcluded();  // zorgt dat excludedSet en metadata/themamap up-to-date zijn
+        loadLocalExcluded();
         updateFavoritesButtonText();
         updateExcludedButtonText();
         return true;
     }
 
-    // ---------- RENDER FUNCTIES (filteren op uitgesloten) ----------
+    // ---------- RENDER FUNCTIES (met bolletje links, ster rechts) ----------
     function renderCurrentTheme() {
         if (!shuffledThemes.length || !themeMap.size) {
             wordsGrid.innerHTML = `<div class="tile">📭 Geen data</div><div class="tile">Controleer de sheet-URL</div>`;
@@ -690,7 +714,6 @@
         }
         const currentTheme = shuffledThemes[currentIndex];
         let wordsList = themeMap.get(currentTheme) || [];
-        // Filter: uitgesloten woorden niet tonen
         wordsList = wordsList.filter(item => !excludedSet.has(item.rowIndex));
         const totalThemes = shuffledThemes.length;
         themeCounterSpan.textContent = `${currentIndex+1} / ${totalThemes}`;
@@ -713,9 +736,11 @@
             gridHtml += `
                 <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
                 <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
-                    <span class="translation-text">${vertalingHtml}</span>
-                    <div class="action-buttons">
+                    <div class="translation-left">
                         <button class="${exclClass}" data-row-index="${item.rowIndex}" data-action="exclude">${exclSymbol}</button>
+                        <span class="translation-text">${vertalingHtml}</span>
+                    </div>
+                    <div class="translation-right">
                         <button class="${starClass}" data-row-index="${item.rowIndex}" data-action="favorite">${starSymbol}</button>
                     </div>
                 </div>
@@ -747,9 +772,11 @@
             gridHtml += `
                 <div class="tile woord-tile">${escapeHtml(item.woord)}</div>
                 <div class="tile vertaling-tile" data-row-index="${item.rowIndex}">
-                    <span class="translation-text">${vertalingHtml}</span>
-                    <div class="action-buttons">
+                    <div class="translation-left">
                         <button class="${exclClass}" data-row-index="${item.rowIndex}" data-action="exclude">${exclSymbol}</button>
+                        <span class="translation-text">${vertalingHtml}</span>
+                    </div>
+                    <div class="translation-right">
                         <button class="${starClass}" data-row-index="${item.rowIndex}" data-action="favorite">${starSymbol}</button>
                     </div>
                 </div>
@@ -767,7 +794,7 @@
         const lowerQuery = query.toLowerCase();
         let results = wordsMetadata.filter(item => 
             (item.woord.toLowerCase().includes(lowerQuery) || item.vertaling.toLowerCase().includes(lowerQuery)) &&
-            !excludedSet.has(item.rowIndex)   // uitgesloten woorden niet tonen in zoekresultaten
+            !excludedSet.has(item.rowIndex)
         );
         
         searchResultsDiv.style.display = "block";
@@ -824,7 +851,6 @@
         setStatus("Zoekresultaten gewist.", false);
     }
 
-    // Overzicht van alle uitgesloten items
     function renderExcludedOverview() {
         const excludedItems = wordsMetadata.filter(item => excludedSet.has(item.rowIndex));
         excludedOverviewContainer.style.display = "block";
@@ -855,7 +881,6 @@
                 `;
             }
             excludedOverviewList.innerHTML = html;
-            // event listeners voor verwijder knoppen
             document.querySelectorAll('.remove-excluded-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const rowIdx = parseInt(btn.getAttribute('data-row'));
@@ -887,7 +912,6 @@
         setStatus("Terug naar oefenmodus.", false);
     }
 
-    // Event handlers voor ontblurren + ster + bolletje (kruisje)
     function attachEventHandlers() {
         document.querySelectorAll('.vertaling-tile').forEach(tile => {
             const textSpan = tile.querySelector('.translation-text');
@@ -895,7 +919,7 @@
                 const newTile = tile.cloneNode(true);
                 tile.parentNode.replaceChild(newTile, tile);
                 const newTextSpan = newTile.querySelector('.translation-text');
-                // klik op vertaling = ontblurren
+                // ontblurren bij klik op de hele tegel behalve op knoppen
                 newTile.addEventListener('click', function(e) {
                     if (e.target.classList && (e.target.classList.contains('favorite-star') || e.target.classList.contains('exclude-circle'))) return;
                     e.stopPropagation();
@@ -922,13 +946,12 @@
                         await setFavorite(rowIndex, newFavorite);
                     });
                 }
-                // Bolletje (uitsluiten) actie: toont direct kruisje of bolletje via class/text update
+                // Bolletje (uitsluiten) links
                 const exclBtn = newTile.querySelector('.exclude-circle');
                 if (exclBtn) {
                     exclBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         const rowIndex = parseInt(this.getAttribute('data-row-index'));
-                        // Visuele feedback direct (zonder wachten op re-render) om vloeiend te houden
                         const currentlyExcluded = this.classList.contains('active');
                         if (currentlyExcluded) {
                             this.classList.remove('active');
@@ -975,7 +998,6 @@
         }
     }
 
-    // Navigatie
     function prevTheme() {
         if (!shuffledThemes.length) return;
         currentIndex = (currentIndex - 1 + shuffledThemes.length) % shuffledThemes.length;
@@ -1013,7 +1035,6 @@
         setStatus("📚 Terug naar thema-oefening.", false);
     }
 
-    // Event listeners
     prevBtn.addEventListener('click', prevTheme);
     nextBtn.addEventListener('click', nextTheme);
     showFavoritesBtn.addEventListener('click', enableFavoritesOnly);
